@@ -1,0 +1,26 @@
+name: Run python only tests
+description: "Sets up running python tests for Assembly Line projects. Should work with both docassemble and non-docassemble projects"
+outputs:
+  tests-passed:
+    description: "If the tests passed"
+    value: ${{ steps.output-step.outputs.test-outputs }}
+
+runs:
+  using: "composite"
+  steps:
+    - run: sudo apt-get update && sudo apt-get -y install libcurl4-openssl-dev build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils tox lcov libzbar0
+    - run: echo "ISUNITTEST=true" >> $GITHUB_ENV
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+        cache-dependency-path: |
+            setup.py
+            **/requirements.txt
+    - run: pip install --editable . -r `find . -name requirements.txt`
+    - run: python -m mypy .
+    - if: ${{ success() }}
+      run: python -m unittest discover
+    - id: output-step
+      run: echo "test-outputs=$?" >>  $GITHUB_OUTPUT
