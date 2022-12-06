@@ -9,7 +9,9 @@ runs:
   using: "composite"
   steps:
     - run: sudo apt-get update && sudo apt-get -y install libcurl4-openssl-dev build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils tox lcov libzbar0
+      shell: bash
     - run: echo "ISUNITTEST=true" >> $GITHUB_ENV
+      shell: bash
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:
@@ -19,8 +21,12 @@ runs:
             setup.py
             **/requirements.txt
     - run: pip install --editable . -r `find . -name requirements.txt`
+      shell: bash
     - run: python -m mypy .
+      shell: bash
     - if: ${{ success() }}
       run: python -m unittest discover
+      shell: bash
     - id: output-step
       run: echo "test-outputs=$?" >>  $GITHUB_OUTPUT
+      shell: bash

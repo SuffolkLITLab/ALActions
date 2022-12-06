@@ -23,6 +23,7 @@ runs:
         echo "GITHUB_REF_NAME=${{ github.ref }}" >> $GITHUB_ENV
         echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
         echo "GITHUB_SERVER=${{ github.server_url}}/${{ github.repository }}" >> $GITHUB_ENV
+      shell: bash
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
       uses: actions/setup-python@v1
@@ -30,25 +31,31 @@ runs:
         python-version: 3.9
     - name: Install pypa/build
       run: python -m pip install build --user
+      shell: bash
     - name: Check syntax for all files
       run: python -m compileall . -q
+      shell: bash
     - name: Build a binary wheel and a source tarball
       run: python -m build --sdist --wheel --outdir dist/
+      shell: bash
     - if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
       name: Ensure github tag is the same as the pypi tag
       run: |
         new_version=$(grep version= setup.py | cut -d\' -f 2)
         [ "$GITHUB_REF_NAME" = "v$new_version" ]
+      shell: bash
     - if: ${{ failure() }}
       name: failed step
       run: |
         new_version=$(grep version= setup.py | cut -d\' -f 2)
         echo "Github tag name ($GITHUB_REF_NAME) doesn't match the setup.py version ($new_version). Not publishing to pypi"
+      shell: bash
     - name: Publish distribution 📦 to PyPI
       if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ inputs.PYPI_API_TOKEN }}
+      shell: bash
     - name: Announce to teams
       if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
       run: |
@@ -104,4 +111,5 @@ runs:
         }
         EOF
         curl -H "Content-Type:application/json" -d "@teams_msg_to_send.json" "$TEAMS_BUMP_WEBHOOK"
+      shell: bash
 
