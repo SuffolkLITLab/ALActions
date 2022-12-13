@@ -28,7 +28,7 @@ runs:
         import os
         with requests.get(f"{os.environ['SERVER_URL']}/list") as conn:
             if conn.ok:
-                soup = bs4.BeautifulSoup(conn.text, "lxml")
+                soup = bs4.BeautifulSoup(conn.text, "html.parser")
             else:
                 print(f"Couldn't connect to {os.environ['SERVER_URL']}")
                 sys.exit(1)
