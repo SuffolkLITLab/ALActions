@@ -14,19 +14,23 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - run: echo "SERVER_URL=${{inputs.SERVER_URL}} >> $GITHUB_ENV"
+      shell: bash
     - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - run:  pip install bs4 requests
       shell: bash
-    - run: |
+    - name: Beautiful soup to find failing interview links
+      run: |
         import bs4
         import requests
-        with requests.get("{{SERVER_URL}}/list") as conn:
+        import os
+        with requests.get(f"{os.environ['SERVER_URL']}/list") as conn:
             if conn.ok:
                 soup = bs4.BeautifulSoup(conn.text, "lxml")
             else:
-                print("Couldn't connect to {{SERVER_URL}}")
+                print(f"Couldn't connect to {os.environ['SERVER_URL']}")
                 sys.exit(1)
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
