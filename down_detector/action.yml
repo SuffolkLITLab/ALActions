@@ -31,12 +31,12 @@ runs:
                 soup = bs4.BeautifulSoup(conn.text, "html.parser")
             else:
                 print(f"Couldn't connect to {os.environ['SERVER_URL']}")
-                sys.exit(1)
+                exit(1)
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
             print(f"Found these links that aren't installed correctly: {failed_links}")
-            sys.exit(1)
+            exit(1)
         else:
             print(f"All good: no failed links found!")
       shell: python
