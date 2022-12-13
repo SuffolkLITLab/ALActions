@@ -1,0 +1,39 @@
+name: Check if interviews are installed correctly
+description: |
+    On Docassemble, the /list endpoint shows if all interviews are installed correctly.
+    This action can visits the /list endpoint automatically
+inputs:
+  SERVER_URL:
+    description: 'The url of the docassemble server that you want to check'
+    required: true
+outputs:
+  tests-passed:
+    description: "If the tests passed"
+    value: ${{ steps.output-step.outputs.test-outputs }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - run:  pip install bs4 requests
+      shell: bash
+    - run: |
+        import bs4
+        import requests
+        with requests.get("{{SERVER_URL}}/list") as conn:
+            if conn.ok:
+                soup = bs4.BeautifulSoup(conn.text, "lxml")
+            else:
+                print("Couldn't connect to {{SERVER_URL}}")
+                sys.exit(1)
+        links = soup.find_all("a")
+        failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
+        if failed_links:
+            print(f"Found these links that aren't installed correctly: {failed_links}")
+            sys.exit(1)
+        else:
+            print(f"All good: no failed links found!")
+      shell: python
+
