@@ -1,0 +1,22 @@
+name: Use down detector to see if any interview on dev isn't working
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      url:
+        required: False
+        description: 'Optional. Use a "tag expression" to specify which tagged tests to run'
+        default: 'https://apps-dev.suffolklitlab.org'
+
+jobs:
+  interview-testing:
+    runs-on: ubuntu-latest
+    name: Run interview tests
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use ALKiln to run tests
+        uses: SuffolkLITLab/ALActions/down_detector@down_detector
+        with:
+          SERVER_URL: "${{ inputs.url }}"
+      - run: echo "Finished running down test"
