@@ -14,12 +14,12 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: echo "SERVER_URL=${{inputs.SERVER_URL}} >> $GITHUB_ENV"
-      shell: bash
     - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - run:  pip install bs4 requests
+      shell: bash
+    - run: echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
       shell: bash
     - name: Beautiful soup to find failing interview links
       run: |
