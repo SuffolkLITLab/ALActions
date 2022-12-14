@@ -1,0 +1,27 @@
+name: Use hall monitor to see if any interview on dev isn't working
+
+on:
+  workflow_dispatch:
+  schedule:
+    # run once every hour
+    # * is a special character in YAML so you have to quote this string
+    - cron:  "0 * * * *"
+
+jobs:
+  apps-test-monitor:
+    runs-on: ubuntu-latest
+    name: Check apps-test for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@down_detector
+        with:
+          SERVER_URL: "https://apps-dev.suffolklitlab.org"
+      - run: echo "Finished running monitor for test"
+  apps-prod-monitor:
+    runs-on: ubuntu-latest
+    name: Check apps.suffolk for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@down_detector
+        with:
+          SERVER_URL: "https://apps.suffolklitlab.org"
+      - run: echo "Finished running monitor for prod"
+  

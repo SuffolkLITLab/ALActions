@@ -1,15 +1,11 @@
-name: Check if interviews are installed correctly
+name: Check if interviews are installed correctly on a server
 description: |
     On Docassemble, the /list endpoint shows if all interviews are installed correctly.
-    This action can visits the /list endpoint automatically
+    This action visits the /list endpoint automatically and finds which interviews have errors.
 inputs:
   SERVER_URL:
-    description: 'The url of the docassemble server that you want to check'
+    description: "The url of the docassemble server that you want to check (with or without trailing slash)"
     required: true
-outputs:
-  tests-passed:
-    description: "If the tests passed"
-    value: ${{ steps.output-step.outputs.test-outputs }}
 
 runs:
   using: "composite"
@@ -21,8 +17,8 @@ runs:
       shell: bash
     - run: echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
       shell: bash
-    - name: Beautiful soup to find failing interview links
-      run: |
+    - run: |
+        # Beautiful soup to find failing interview links
         import bs4
         import requests
         import os
@@ -30,14 +26,14 @@ runs:
             if conn.ok:
                 soup = bs4.BeautifulSoup(conn.text, "html.parser")
             else:
-                print(f"Couldn't connect to {os.environ['SERVER_URL']}")
+                print(f"Hall monitor couldn't connect to {os.environ['SERVER_URL']}")
                 exit(1)
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
-            print(f"Found these links that aren't installed correctly: {failed_links}")
+            print(f"Hall Monitor found these links that aren't installed correctly: {failed_links}")
             exit(1)
         else:
-            print(f"All good: no failed links found!")
+            print(f"Hall Monitor: all good, no failed links found!")
       shell: python
 
