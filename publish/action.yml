@@ -48,7 +48,7 @@ runs:
       name: failed step
       run: |
         new_version=$(grep version= setup.py | cut -d\' -f 2)
-        echo "Github tag name ($GITHUB_REF_NAME) doesn't match the setup.py version ($new_version). Not publishing to pypi"
+        echo "Github tag name ($GITHUB_REF_NAME) doesn't match the setup.py version (v$new_version). Not publishing to pypi"
       shell: bash
     - name: Publish distribution 📦 to PyPI
       if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
