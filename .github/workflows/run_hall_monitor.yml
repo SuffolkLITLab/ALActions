@@ -8,13 +8,21 @@ on:
     - cron:  "0 * * * *"
 
 jobs:
+  apps-dev-monitor:
+    runs-on: ubuntu-latest
+    name: Check apps-dev for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://apps-dev.suffolklitlab.org"
+      - run: echo "Finished running monitor for dev"
   apps-test-monitor:
     runs-on: ubuntu-latest
     name: Check apps-test for misinstalled interviews
     steps:
       - uses: SuffolkLITLab/ALActions/hall_monitor@main
         with:
-          SERVER_URL: "https://apps-dev.suffolklitlab.org"
+          SERVER_URL: "https://apps-test.suffolklitlab.org"
       - run: echo "Finished running monitor for test"
   apps-prod-monitor:
     runs-on: ubuntu-latest
