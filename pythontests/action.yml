@@ -20,7 +20,9 @@ runs:
         cache-dependency-path: |
             setup.py
             **/requirements.txt
-    - run: pip install --editable . -r `find . -name requirements.txt`
+    - run: pip install wheel
+      shell: bash
+    - run: pip install -v --editable . -r `find . -name requirements.txt`
       shell: bash
     - run: python -m mypy .
       shell: bash
