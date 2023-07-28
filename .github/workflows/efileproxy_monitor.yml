@@ -1,0 +1,45 @@
+name: EfileProxy monitoring
+
+on:
+  workflow_dispatch:
+  schedule:
+    # run once a day
+    # * is a special character in YAML, so you have to quote the string
+    - cron: "0 8,16 * * *"
+
+jobs:
+  prod-testing:
+    runs-on: ubuntu-latest
+    name: Check efile prod
+    steps:
+      - run: |
+          import requests
+          with requests.get("https://efile.suffolklitlab.org/about") as conn:
+              if conn.ok:
+                j_about = json.loads(conn.text)
+              else:
+                print(f"Couldnt't connect to efile prod! {conn.status_code}")
+                exit(1)
+          if 'version' not in j_about:
+            print(f"Couldn't get version from the about page of efile prod?: {j_about})
+            exit(2)
+          print(f"EfileProxy Monitoring all good; able to connect to prod's about page")
+        shell: python
+  test-testing:
+    runs-on: ubuntu-latest
+    name: Check efile test
+    steps:
+      - run: |
+          import requests
+          with requests.get("https://efile-test.suffolklitlab.org/about") as conn:
+              if conn.ok:
+                j_about = json.loads(conn.text)
+              else:
+                print(f"Couldnt't connect to efile test! {conn.status_code}")
+                exit(1)
+          if 'version' not in j_about:
+            print(f"Couldn't get version from the about page of efile test?: {j_about})
+            exit(2)
+          print(f"EfileProxy Monitoring all good; able to connect to test's about page")
+        shell: python
+        
