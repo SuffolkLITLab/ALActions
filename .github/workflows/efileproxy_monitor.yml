@@ -21,7 +21,7 @@ jobs:
                 print(f"Couldnt't connect to efile prod! {conn.status_code}")
                 exit(1)
           if 'version' not in j_about:
-            print(f"Couldn't get version from the about page of efile prod?: {j_about})
+            print(f"Couldn't get version from the about page of efile prod?: {j_about}")
             exit(2)
           print(f"EfileProxy Monitoring all good; able to connect to prod's about page")
         shell: python
@@ -38,7 +38,7 @@ jobs:
                 print(f"Couldnt't connect to efile test! {conn.status_code}")
                 exit(1)
           if 'version' not in j_about:
-            print(f"Couldn't get version from the about page of efile test?: {j_about})
+            print(f"Couldn't get version from the about page of efile test?: {j_about}")
             exit(2)
           print(f"EfileProxy Monitoring all good; able to connect to test's about page")
         shell: python
