@@ -5,8 +5,7 @@ inputs:
   MAKE_PR:
     description: |
       If "true" and the linter needs to make changes, it'll make a PR to the current PR.\
-      You will to store a GitHub token as a secret in your repository called `GITHUB_TOKEN` to
-      make the PR.
+      You will to pass a GitHub token through GITHUB_TOKEN to make the PR.
 
       If this is true, it's suggested that you only run the action on PRS and pushes to main, like this:
 
@@ -19,6 +18,11 @@ inputs:
           branches:
             - main
       ```
+    required: false
+    default: ""
+  GITHUB_TOKEN:
+    description: |
+      The GitHub token needed to actually make the PR if formatting is needed.
     required: false
     default: ""
 outputs:
@@ -36,10 +40,10 @@ runs:
       with:
         black_args: ". --extend-exclude (__init__.py|setup.py)"
     - name: Create Pull Request
-      if: steps.action_black.outputs.is_formatted == 'true' and inputs.MAKE_PR == 'true'
+      if: steps.action_black.outputs.is_formatted == 'true' && inputs.MAKE_PR == 'true'
       uses: peter-evans/create-pull-request@v3
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ inputs.GITHUB_TOKEN }}
         title: "Format Python code with psf/black push"
         commit-message: ":art: Format Python code with psf/black"
         body: |
