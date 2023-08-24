@@ -1,0 +1,25 @@
+name: docsig checks
+description: "Runs docsig checkes to make sure the python docstrings are good and match the Google style standard"
+outputs:
+  tests-passed:
+    description: "If the tests passed"
+    value: ${{ steps.output-step.outputs.test-outputs }}
+
+runs:
+  using: "composite"
+  steps:
+    - run: sudo apt-get update && sudo apt-get -y install libcurl4-openssl-dev build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils tox lcov libzbar0
+      shell: bash
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - run: pip install docsig
+      shell: bash
+    - run: |
+        docsig `find . -name "*.py" ! -name "test*.py" ! -name "*setup.py" ! -name "*__init__.py"`
+      shell: bash
+    - id: output-step
+      run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
+      shell: bash
+      
