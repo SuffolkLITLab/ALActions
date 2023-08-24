@@ -1,0 +1,49 @@
+name: black-action
+description: |
+  Runs the black python formatter on repo files, and makes a PR with the changes if there are any
+inputs:
+  MAKE_PR:
+    description: |
+      If "true" and the linter needs to make changes, it'll make a PR to the current PR.\
+      You will to store a GitHub token as a secret in your repository called `GITHUB_TOKEN` to
+      make the PR.
+
+      If this is true, it's suggested that you only run the action on PRS and pushes to main, like this:
+
+      ```
+      on:
+        push:
+          branches:
+            - main
+        pull_request:
+          branches:
+            - main
+      ```
+    required: false
+    default: ""
+outputs:
+  linting-passed:
+    description: "If linting check passed"
+    value: ${{ steps.output-step.outputs.linting-passed }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v2
+    - name: Check files using the black formatter
+      uses: rickstaa/action-black@v1.1.7
+      id: action_black
+      with:
+        black_args: ". --extend-exclude (__init__.py|setup.py)"
+    - name: Create Pull Request
+      if: steps.action_black.outputs.is_formatted == 'true' and inputs.MAKE_PR == 'true'
+      uses: peter-evans/create-pull-request@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: "Format Python code with psf/black push"
+        commit-message: ":art: Format Python code with psf/black"
+        body: |
+          There appear to be some python formatting errors in ${{ github.sha }}. This pull request
+          uses the [psf/black](https://github.com/psf/black) formatter to fix these issues.
+        base: ${{ github.head_ref }} # Creates pull request onto pull request or commit branch
+        branch: actions/black/${{github.head_ref}}
