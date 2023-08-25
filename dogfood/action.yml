@@ -1,0 +1,67 @@
+name: Install interviews on a given docassemble server
+description: |
+    To continually deploy docassemble packages, this action will install GitHub packages to a given docassemble server.
+    On Docassemble, the /list endpoint shows if all interviews are installed correctly.
+    This action visits the /list endpoint automatically and finds which interviews have errors.
+inputs:
+  SERVER_URL:
+    description: "The url of the docassemble server that you want to check (with or without trailing slash)"
+    required: true
+  DOCASSEMBLE_DEVELOPER_API_KEY:
+    description: "API key of an account that has premissions to install packages to the docassemble server"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - run:  pip install requests
+      shell: bash
+    - run: |
+        echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+        echo "DOCASSEMBLE_DEVELOPER_API_KEY=${{inputs.DOCASSEMBLE_DEVELOPER_API_KEY}}" >> $GITHUB_ENV
+        echo "REPO_URL=${{ github.server_url }}/${{ github.repository }}" >> $GITHUB_ENV
+      shell: bash
+    - run: |
+        import requests
+        import os
+        import time
+        headers = {"X-API-KEY": os.environ['DOCASSEMBLE_DEVELOPER_API_KEY']}
+        payload = {"github_url": os.environ['REPO_URL']}
+        url = f"{os.environ['SERVER_URL']}/api/package"
+        resp = requests.post(url, headers=headers, data=payload)
+        if not resp.ok:
+          print(f"Not able to install {payload} at {url}: {r.text}")
+          exit(1)
+
+        task_id = resp.json()["task_id"]
+        updated_url = f"{os.environ['SERVER_URL']}/api/package_update_status"
+        sleep_count = 0
+        while sleep_count < 10:
+          updated_resp = requests.get(updated_url, params={"task_id": task_id}, headers=headers)
+          if not updated_resp.ok:
+            print(f"Not able to determine if {payload} finished installing: {r.text}")
+            exit(2)
+          body = updated_resp.json()
+          if body['status'] == 'working':
+            time.sleep(15)
+            sleep_count += 1
+          else:
+            break
+
+        if body['status'] == 'completed':
+          if body['ok']:
+            print("Success!")
+            exit(0)
+          else:
+            print("Not successful installing {payload}: {body}")
+            exit(3)
+
+        if body['status'] == 'unknown':
+          print("task_id unknown?")
+          exit(4)
+      shell: python
+
+
