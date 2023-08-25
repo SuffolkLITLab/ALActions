@@ -35,13 +35,65 @@ jobs:
       - uses: SuffolkLITLab/ALActions/pythontests@main 
 ```
 
-### publish
+### black-formatting
 
-`publish` (not yet in use) publishes a python package to pypi, and announces the publishing to a given Teams chat.
+#### Usage  
+
+```yml
+jobs:
+  my-workflow:
+    ...
+    steps:
+      - uses: SuffolkLITLab/ALActions/black-formatting@main
+        with:
+          MAKE_PR: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+`black` will also read configs from `pyproject.toml`. In most projects, we include the following:
+
+```toml
+[tool.black]
+extend-exclude = '(__init__.py|setup.py)'
+```
+
+
+### docsig
+
+`docsig` checks all of the docstrings in the python package to ensure that they match the function signature and have consistent styles.
+Since we use Google style for our docstrings, the packages should use that, even though `docsig` allows NumPy and sphinx styles as well.
 
 #### Usage
 
-TODO
+
+```yml
+jobs:
+  my-workflow:
+    ...
+    steps:
+      - uses: SuffolkLITLab/ALActions/docsig@main
+```
+
+`docsig` can be configured by using `pyproject.toml`. See [the docsig README.md](https://github.com/jshwi/docsig/tree/v0.35.0#commandline) for more info.
+
+
+### publish
+
+`publish` publishes a python package to pypi, and announces the publishing to a given Teams chat.
+
+#### Usage
+
+```yml
+jobs:
+  my-workflow:
+    ...
+    steps:
+    - uses: SuffolkLITLab/ALActions/publish@main
+      with:
+        PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        VERSION_TO_PUBLISH: ${{ env.GITHUB_REF_NAME }}
+        TEAMS_BUMP_WEBHOOK: ${{ secrets.TEAMS_BUMP_WEBHOOK }}
+```
 
 ### Hall Monitor
 
@@ -75,5 +127,5 @@ jobs:
 Using [codeql-action](https://github.com/github/codeql-action) as
 a template for this repo.
 
-This repo is mostly composite actions, as opposed to javascript or docker actions for now.
+This repo is mostly composite actions, as opposed to javascript or docker actions.
 Visit [Github's documentation on composite actions](https://docs.github.com/en/actions/creating-actions/creating-a-composite-action) for more info.
