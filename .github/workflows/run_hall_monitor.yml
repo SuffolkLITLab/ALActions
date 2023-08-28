@@ -1,5 +1,4 @@
-name: Use hall monitor to see if any interview on dev isn't working
-
+name: Use hall monitor to see if any servers are down
 on:
   workflow_dispatch:
   schedule:
