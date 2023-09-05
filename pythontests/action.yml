@@ -30,5 +30,5 @@ runs:
       run: python -m unittest discover
       shell: bash
     - id: output-step
-      run: echo "test-outputs=$?" >>  $GITHUB_OUTPUT
+      run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
       shell: bash
