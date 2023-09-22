@@ -6,6 +6,12 @@ inputs:
   SERVER_URL:
     description: "The url of the docassemble server that you want to check (with or without trailing slash)"
     required: true
+  SENDGRID_API_KEY:
+    description: "The API Key of a sendgrid account; used to send email notifications when things fail"
+    required: false
+  ERROR_EMAILS:
+    description: "A comma separated list of emails that should be notified when / if this task fails"
+    required: false
 
 runs:
   using: "composite"
@@ -13,9 +19,12 @@ runs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    - run:  pip install bs4 requests
+    - run: pip install bs4 requests sendgrid
       shell: bash
-    - run: echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+    - run: |
+        echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+        echo "ERROR_EMAILS=${{inputs.ERROR_EMAILS}}" >> $GITHUB_ENV
+        echo "SENDGRID_API_KEY=${{inputs.SENDGRID_API_KEY}}" > $GITHUB_ENV
       shell: bash
     - run: |
         # Beautiful soup to find failing interview links
@@ -35,5 +44,46 @@ runs:
             exit(1)
         else:
             print(f"Hall Monitor: all good, no failed links found!")
+      shell: python
+    - if: ${{ failure() }}
+      run: |
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail, To, Email, From, Subject, Content
+        import os
+        
+        if "SENDGRID_API_KEY" not in os.environ:
+            print("Not sending email to request emails")
+            exit(0)
+        if "ERROR_EMAILS" not in os.environ:
+            print("No error emails passed in! Not going to notify them of this failure")
+            exit(0)
+
+        message = Mail()
+        message.to = [
+          To(email=to_send, p=0) for to_send in os.environ["ERROR_EMAILS"].split(",")
+        ]
+        message.from_email = From(email="no-reply@suffolklitlab.org")
+
+        message.subject = Subject("${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}")
+        content = f"""
+        <p>Hey there! Your Hall Monitor Action has failed.</p>
+
+        You should check this URL is live: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a>
+
+        More info:
+        <ul>
+          <li> Github job: ${{ github.job }} </li>
+          <li> Github workflow: ${{ github.workflow }} </li>
+          <li> Github workflow: ${{ github.repository }} </li>
+          <li> Job status: ${{ job.status }} </li>
+        </ul>
+        """
+
+        message.content = [
+          Content(mime_type="text/html", content=content)
+        ]
+        sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
+        resp = sg.send(message)
+        print(f"{resp.status_code}, {resp.body} {resp.headers}")
       shell: python
 
