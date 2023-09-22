@@ -48,23 +48,16 @@ runs:
     - if: ${{ failure() }}
       run: |
         from sendgrid import SendGridAPIClient
-        from sendgrid.helpers.mail import Mail, To, Email, From, Subject, Content
+        from sendgrid.helpers.mail import Mail
         import os
         
         if "SENDGRID_API_KEY" not in os.environ:
-            print("Not sending email to request emails")
+            print("No API key! Can't send error notification email")
             exit(0)
         if "ERROR_EMAILS" not in os.environ:
             print("No error emails passed in! Not going to notify them of this failure")
             exit(0)
 
-        message = Mail()
-        message.to = [
-          To(email=to_send, p=0) for to_send in os.environ["ERROR_EMAILS"].split(",")
-        ]
-        message.from_email = From(email="no-reply@suffolklitlab.org")
-
-        message.subject = Subject("${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}")
         content = f"""
         <p>Hey there! Your Hall Monitor Action has failed.</p>
 
@@ -79,9 +72,13 @@ runs:
         </ul>
         """
 
-        message.content = [
-          Content(mime_type="text/html", content=content)
-        ]
+        message = Mail(
+          from_email="no-reply@suffolklitlab.org",
+          to_emails=[to_send for to_send in os.environ["ERROR_EMAILS"].split(",")],
+          subject="${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}",
+          html_content=content
+        )
+
         sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
         resp = sg.send(message)
         print(f"{resp.status_code}, {resp.body} {resp.headers}")
