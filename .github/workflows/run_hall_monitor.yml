@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check apps-dev for misinstalled interviews
     steps:
-      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+      - uses: SuffolkLITLab/ALActions/hall_monitor@sendgrid
         with:
           SERVER_URL: "https://apps-dev.suffolklitlab.org"
       - run: echo "Finished running monitor for dev"
