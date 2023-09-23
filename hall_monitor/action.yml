@@ -65,7 +65,7 @@ runs:
         content = f"""
         <p>Hey there! Your Hall Monitor Action has ${{ steps.check_server.outcome }}.</p>
         <p>You should check all of the interviews at this URL: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a></p>
-        <p>{os getenv("ERRORED_INTERVIEWS", "") }</p>
+        <p>{os.getenv('ERRORED_INTERVIEWS', '') }</p>
         <p>More info:
         <ul>
           <li> Github Repository: ${{ github.repository }} </li>
