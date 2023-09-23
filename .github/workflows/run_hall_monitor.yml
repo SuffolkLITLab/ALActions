@@ -13,7 +13,9 @@ jobs:
     steps:
       - uses: SuffolkLITLab/ALActions/hall_monitor@sendgrid
         with:
-          SERVER_URL: "https://apps-dev.suffolklitlab.org"
+          SERVER_URL: "https://appssss-dev.suffolklitlab.org"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: bwilley@suffolk.edu,massaccess@suffolk.edu
       - run: echo "Finished running monitor for dev"
   apps-test-monitor:
     runs-on: ubuntu-latest
