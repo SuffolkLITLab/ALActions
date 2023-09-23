@@ -26,7 +26,8 @@ runs:
         echo "ERROR_EMAILS=${{inputs.ERROR_EMAILS}}" >> $GITHUB_ENV
         echo "SENDGRID_API_KEY=${{inputs.SENDGRID_API_KEY}}" >> $GITHUB_ENV
       shell: bash
-    - run: |
+    - id: check_server
+      run: |
         # Beautiful soup to find failing interview links
         import bs4
         import requests
@@ -40,7 +41,10 @@ runs:
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
-            print(f"Hall Monitor found these links that aren't installed correctly: {failed_links}")
+            err_str = f"Hall Monitor found these links that aren't installed correctly: {failed_links}"
+            env_file = os.getenv('GITHUB_ENV')
+            with open(env_file, "a") as myfile:
+                myfile.write(f'ERRORED_INTERVIEWS="{err_str}"')
             exit(1)
         else:
             print(f"Hall Monitor: all good, no failed links found!")
@@ -59,22 +63,21 @@ runs:
             exit(0)
 
         content = f"""
-        <p>Hey there! Your Hall Monitor Action has failed.</p>
-
-        You should check this URL is live: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a>
-
-        More info:
+        <p>Hey there! Your Hall Monitor Action has ${{ steps.check_server.outcome }}.</p>
+        <p>You should check all of the interviews at this URL: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a></p>
+        <p>{os getenv("ERRORED_INTERVIEWS", "") }</p>
+        <p>More info:
         <ul>
-          <li> Github job: ${{ github.job }} </li>
+          <li> Github Repository: ${{ github.repository }} </li>
           <li> Github workflow: ${{ github.workflow }} </li>
-          <li> Github workflow: ${{ github.repository }} </li>
-          <li> Job status: ${{ job.status }} </li>
-        </ul>
+          <li> Github job: ${{ github.job }} </li>
+          <li> Job status: ${{ steps.check_server.outcome }} </li>
+        </ul></p>
         """
 
         message = Mail(
           from_email="no-reply@suffolklitlab.org",
-          to_emails=[to_send for to_send in os.environ["ERROR_EMAILS"].split(",")],
+          to_emails=[to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")],
           subject="${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}",
           html_content=content
         )
