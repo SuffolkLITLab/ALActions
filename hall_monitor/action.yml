@@ -41,10 +41,10 @@ runs:
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
-            err_str = f"Hall Monitor found these links that aren't installed correctly: {failed_links}"
+            err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join(failed_links)}"
             env_file = os.getenv('GITHUB_ENV')
             with open(env_file, "a") as myfile:
-                myfile.write(f'ERRORED_INTERVIEWS="{err_str}"')
+                myfile.write(f'ERRORED_INTERVIEWS={err_str}')
             exit(1)
         else:
             print(f"Hall Monitor: all good, no failed links found!")
@@ -63,7 +63,7 @@ runs:
             exit(0)
 
         content = f"""
-        <p>Hey there! Your Hall Monitor Action has ${{ steps.check_server.outcome }}.</p>
+        <p>Hey there! Your Hall Monitor Action has a status of ${{ steps.check_server.outcome }}.</p>
         <p>You should check all of the interviews at this URL: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a></p>
         <p>{os.getenv('ERRORED_INTERVIEWS', '') }</p>
         <p>More info:
