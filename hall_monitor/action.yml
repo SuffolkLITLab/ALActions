@@ -24,7 +24,7 @@ runs:
     - run: |
         echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
         echo "ERROR_EMAILS=${{inputs.ERROR_EMAILS}}" >> $GITHUB_ENV
-        echo "SENDGRID_API_KEY=${{inputs.SENDGRID_API_KEY}}" > $GITHUB_ENV
+        echo "SENDGRID_API_KEY=${{inputs.SENDGRID_API_KEY}}" >> $GITHUB_ENV
       shell: bash
     - run: |
         # Beautiful soup to find failing interview links
