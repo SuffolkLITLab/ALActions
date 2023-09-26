@@ -6,6 +6,12 @@ inputs:
   SERVER_URL:
     description: "The url of the docassemble server that you want to check (with or without trailing slash)"
     required: true
+  SENDGRID_API_KEY:
+    description: "The API Key of a sendgrid account; used to send email notifications when things fail"
+    required: false
+  ERROR_EMAILS:
+    description: "A comma separated list of emails that should be notified when / if this task fails"
+    required: false
 
 runs:
   using: "composite"
@@ -13,11 +19,15 @@ runs:
     - uses: actions/setup-python@v4
       with:
         python-version: '3.9'
-    - run:  pip install bs4 requests
-      shell: bash
-    - run: echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+    - run: pip install bs4 requests sendgrid
       shell: bash
     - run: |
+        echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+        echo "ERROR_EMAILS=${{inputs.ERROR_EMAILS}}" >> $GITHUB_ENV
+        echo "SENDGRID_API_KEY=${{inputs.SENDGRID_API_KEY}}" >> $GITHUB_ENV
+      shell: bash
+    - id: check_server
+      run: |
         # Beautiful soup to find failing interview links
         import bs4
         import requests
@@ -31,9 +41,49 @@ runs:
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
-            print(f"Hall Monitor found these links that aren't installed correctly: {failed_links}")
+            err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join(failed_links)}"
+            env_file = os.getenv('GITHUB_ENV')
+            with open(env_file, "a") as myfile:
+                myfile.write(f'ERRORED_INTERVIEWS={err_str}')
             exit(1)
         else:
             print(f"Hall Monitor: all good, no failed links found!")
+      shell: python
+    - if: ${{ failure() }}
+      run: |
+        from sendgrid import SendGridAPIClient
+        from sendgrid.helpers.mail import Mail
+        import os
+        
+        if "SENDGRID_API_KEY" not in os.environ:
+            print("No API key! Can't send error notification email")
+            exit(0)
+        if "ERROR_EMAILS" not in os.environ:
+            print("No error emails passed in! Not going to notify them of this failure")
+            exit(0)
+
+        content = f"""
+        <p>Hey there! Your Hall Monitor Action has a status of ${{ steps.check_server.outcome }}.</p>
+        <p>You should check all of the interviews at this URL: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a></p>
+        <p>{os.getenv('ERRORED_INTERVIEWS', '') }</p>
+        <p>More info:
+        <ul>
+          <li> Github Repository: ${{ github.repository }} </li>
+          <li> Github workflow: ${{ github.workflow }} </li>
+          <li> Github job: ${{ github.job }} </li>
+          <li> Job status: ${{ steps.check_server.outcome }} </li>
+        </ul></p>
+        """
+
+        message = Mail(
+          from_email="no-reply@suffolklitlab.org",
+          to_emails=[to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")],
+          subject="${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}",
+          html_content=content
+        )
+
+        sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
+        resp = sg.send(message)
+        print(f"{resp.status_code}, {resp.body} {resp.headers}")
       shell: python
 

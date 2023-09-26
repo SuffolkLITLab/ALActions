@@ -24,7 +24,7 @@ bug fixes to the actions to immediately propagate to the AssemblyLine repos.
 
 `pythontest` sets up a python environment around the package, and runs any [`unittest` tests](https://docs.python.org/3/library/unittest.html) in the package.
 
-#### Usage 
+#### Usage
 
 ```yml
 jobs:
@@ -103,7 +103,7 @@ acting like a hall monitor peaking through doors, but not investigating any furt
 #### Usage
 
 You will likely want to run this action on a schedule, several times a day.
-You can see more about how to define this schedule in the 
+You can see more about how to define this schedule in the
 [github on.schedule](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onschedule)
 documentation.
 
@@ -120,6 +120,22 @@ jobs:
       - uses: SuffolkLITLab/ALActions/hall_monitor@main
         with:
           SERVER_URL: "https://my-docassemble.example.com"
+```
+
+This also supports sending email notifications (separate from GitHub's notification system, which doesn't let you notify arbitrary people about an action failing) to multiple, comma separated emails, using Sendgrid.
+
+Here's a code example:
+
+```yml
+jobs:
+  my-workflow:
+    ...
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://my-docassemble.example.com"
+          SENDGRID_API_KEY: ${{ secrets.MY_SENDGRID_API_KEY }}
+          ERROR_EMAILS: example@example.com,example2@example.com
 ```
 
 ## Development Details
