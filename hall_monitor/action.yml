@@ -78,7 +78,7 @@ runs:
         message = Mail(
           from_email="no-reply@suffolklitlab.org",
           to_emails=[to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")],
-          subject="${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}",
+          subject="${{ github.job }} job of ${{ github.repository }} has ${{ steps.check_server.outcome }}",
           html_content=content
         )
 
