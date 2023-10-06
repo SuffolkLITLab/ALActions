@@ -122,9 +122,9 @@ jobs:
           SERVER_URL: "https://my-docassemble.example.com"
 ```
 
-This also supports sending email notifications (separate from GitHub's notification system, which doesn't let you notify arbitrary people about an action failing) to multiple, comma separated emails, using Sendgrid.
+This also supports sending email notifications (separate from GitHub's notification system, which doesn't let you notify arbitrary people about an action failing) to multiple, comma separated emails, using [Sendgrid](https://sendgrid.com/) and [Mailgun](https://www.mailgun.com/).
 
-Here's a code example:
+Here's a code example for sendgrid:
 
 ```yml
 jobs:
@@ -135,6 +135,23 @@ jobs:
         with:
           SERVER_URL: "https://my-docassemble.example.com"
           SENDGRID_API_KEY: ${{ secrets.MY_SENDGRID_API_KEY }}
+          ERROR_FROM_EMAIL: Monitor <alert@example.com>
+          ERROR_EMAILS: example@example.com,example2@example.com
+```
+
+And one for Mailgun
+
+```yml
+jobs:
+  my-workflow:
+    ...
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://my-docassemble.example.com"
+          MAILGUN_API_KEY: ${{ secrets.MY_MAILGUN_API_KEY }}
+          MAILGUN_DOMAIN: ${{ secrets.MY_MAILGUN_DOMAIN }}
+          ERROR_FROM_EMAIL: Monitor <alert@example.com>
           ERROR_EMAILS: example@example.com,example2@example.com
 ```
 
