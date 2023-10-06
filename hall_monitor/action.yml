@@ -48,7 +48,8 @@ runs:
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
-            err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join([str(fl) for fl in failed_links])}"
+            updated_links = [f"{os.environ['SERVER_URL']}/{fl.attrs['href']}" for fl in failed_links ]
+            err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join(updated_links)}"
             env_file = os.getenv('GITHUB_ENV')
             with open(env_file, "a") as myfile:
                 myfile.write(f'ERRORED_INTERVIEWS={err_str}')
