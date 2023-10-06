@@ -48,7 +48,7 @@ runs:
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
         if failed_links:
-            err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join(failed_links)}"
+            err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join([str(fl) for fl in failed_links])}"
             env_file = os.getenv('GITHUB_ENV')
             with open(env_file, "a") as myfile:
                 myfile.write(f'ERRORED_INTERVIEWS={err_str}')
@@ -89,7 +89,7 @@ runs:
           sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
           resp = sg.send(message)
         elif "MAILGUN_API_KEY" in os.environ and "MAILGUN_DOMAIN" in os.environ:
-          url = f"https://api.mailgun.net/v3/{os.environ["MAILGUN_DOMAIN"]}/messages"
+          url = f"https://api.mailgun.net/v3/{os.environ['MAILGUN_DOMAIN']}/messages"
           resp = requests.post(url, auth=("api", os.environ["MAILGUN_API_KEY"]), data={
             "from": send_from,
             "to": send_to,
