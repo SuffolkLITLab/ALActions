@@ -63,7 +63,7 @@ runs:
         import os
         import requests
 
-        if "ERROR_EMAILS" not in os.environ:
+        if not os.getenv("ERROR_EMAILS"):
             print("No error emails passed in! Not going to notify them of this failure")
             exit(0)
 
@@ -84,11 +84,11 @@ runs:
         </ul></p>
         """
 
-        if "SENDGRID_API_KEY" in os.environ:
+        if os.getenv("SEND_GRID_API_KEY"):
           message = Mail(from_email=send_from, to_emails=send_to, subject=subject, html_content=content)
           sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
           resp = sg.send(message)
-        elif "MAILGUN_API_KEY" in os.environ and "MAILGUN_DOMAIN" in os.environ:
+        elif os.getenv("MAILGUN_API_KEY") and os.getenv("MAILGUN_DOMAIN"):
           url = f"https://api.mailgun.net/v3/{os.environ['MAILGUN_DOMAIN']}/messages"
           resp = requests.post(url, auth=("api", os.environ["MAILGUN_API_KEY"]), data={
             "from": send_from,
