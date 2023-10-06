@@ -9,8 +9,17 @@ inputs:
   SENDGRID_API_KEY:
     description: "The API Key of a sendgrid account; used to send email notifications when things fail"
     required: false
+  MAILGUN_API_KEY:
+    description: "The API Key of a mailgun account; used to send email notifications when things fail"
+    required: false
+  MAILGUN_DOMAIN:
+    description: "The Domain that you are sending from mailgun"
+    required: false
   ERROR_EMAILS:
     description: "A comma separated list of emails that should be notified when / if this task fails"
+    required: false
+  ERROR_EMAIL_FROM:
+    description: "The email address the error should be sent from. Helps with making sure messages are delivered"
     required: false
 
 runs:
@@ -23,8 +32,6 @@ runs:
       shell: bash
     - run: |
         echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
-        echo "ERROR_EMAILS=${{inputs.ERROR_EMAILS}}" >> $GITHUB_ENV
-        echo "SENDGRID_API_KEY=${{inputs.SENDGRID_API_KEY}}" >> $GITHUB_ENV
       shell: bash
     - id: check_server
       run: |
@@ -54,13 +61,15 @@ runs:
         from sendgrid import SendGridAPIClient
         from sendgrid.helpers.mail import Mail
         import os
-        
-        if "SENDGRID_API_KEY" not in os.environ:
-            print("No API key! Can't send error notification email")
-            exit(0)
+        import requests
+
         if "ERROR_EMAILS" not in os.environ:
             print("No error emails passed in! Not going to notify them of this failure")
             exit(0)
+
+        send_from = os.getenv("ERROR_EMAIL_FROM", "no-reply@suffolklitlab.org")
+        send_to = [to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")],
+        subject = "${{ github.job }} job of ${{ github.repository }} has ${{ steps.check_server.outcome }}"
 
         content = f"""
         <p>Hey there! Your Hall Monitor Action has a status of ${{ steps.check_server.outcome }}.</p>
@@ -75,15 +84,28 @@ runs:
         </ul></p>
         """
 
-        message = Mail(
-          from_email="no-reply@suffolklitlab.org",
-          to_emails=[to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")],
-          subject="${{ github.job }} job of ${{ github.repository }} has ${{ steps.check_server.outcome }}",
-          html_content=content
-        )
+        if "SENDGRID_API_KEY" in os.environ:
+          message = Mail(from_email=send_from, to_emails=send_to, subject=subject, html_content=content)
+          sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
+          resp = sg.send(message)
+        elif "MAILGUN_API_KEY" in os.environ and "MAILGUN_DOMAIN" in os.environ:
+          url = f"https://api.mailgun.net/v3/{os.environ["MAILGUN_DOMAIN"]}/messages"
+          resp = requests.post(url, auth=("api", os.environ["MAILGUN_API_KEY"]), data={
+            "from": send_from,
+            "to": send_to,
+            "subject": subject,
+            "text": "Your hall monitor action has failed",
+            "html": content
+          })
+        else:
+          print("Not sending emails, neither sendgrid or mailgun is setup!")
+          exit(2)
 
-        sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
-        resp = sg.send(message)
         print(f"{resp.status_code}, {resp.body} {resp.headers}")
       shell: python
-
+      env:
+        ERROR_EMAIL_FROM: ${{ inputs.ERROR_EMAIL_FROM }}
+        ERROR_EMAILS: ${{ inputs.ERROR_EMAILS }}
+        SENDGRID_API_KEY: ${{ inputs.SENDGRID_API_KEY }}
+        MAILGUN_API_KEY: ${{ inputs.MAILGUN_API_KEY }}
+        MAILGUN_DOMAIN: ${{ inputs.MAILGUN_DOMAIN }}
