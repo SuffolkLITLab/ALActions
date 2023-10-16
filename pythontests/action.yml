@@ -8,7 +8,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - run: sudo apt-get update && sudo apt-get -y install libcurl4-openssl-dev build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils tox lcov libzbar0
+    - run: sudo apt-get update && sudo apt-get -y install libcurl4-openssl-dev build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils tox lcov libzbar0 libaugeas0 augeas-lenses
       shell: bash
     - run: echo "ISUNITTEST=true" >> $GITHUB_ENV
       shell: bash
