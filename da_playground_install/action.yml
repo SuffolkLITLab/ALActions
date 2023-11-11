@@ -23,9 +23,11 @@ runs:
       uses: actions/checkout@v3
     - name: Change Working Directory
       run: cd ..
+      shell: bash
     - name: Get Repository Name
       id: repo_name
       run: echo "::set-output name=name::$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)"
+      shell: bash
     - name: Zip repository contents excluding .git
       run: zip -r deploy.zip ./${{ steps.repo_name.outputs.name }} -x "*.git*"
       shell: bash
