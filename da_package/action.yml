@@ -16,10 +16,6 @@ inputs:
   PIP_PACKAGE:
     description: 'Name of the Python package to install from PyPI (optional)'
     required: false
-  RESTART:
-    description: 'Set to 0 to skip server restart after installation (optional)'
-    default: '1'
-    required: false
 runs:
   using: 'composite'
   steps:
@@ -51,8 +47,6 @@ runs:
         elif [ -z "${{ inputs.GITHUB_URL }}" ]; then
           curl_args+=("-F" "zip=@deploy.zip")
         fi
-
-        curl_args+=("-F" "restart=${{ inputs.RESTART }}")
 
         curl_args+=("${{ inputs.SERVER_URL }}/api/package")
 
