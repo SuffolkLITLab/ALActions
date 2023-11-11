@@ -20,9 +20,14 @@ runs:
   using: 'composite'
   steps:
     - name: Check out repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+    - name: Change Working Directory
+      run: cd ..
+    - name: Get Repository Name
+      id: repo_name
+      run: echo "::set-output name=name::$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)"
     - name: Zip repository contents excluding .git
-      run: zip -r deploy.zip . -x "*.git*"
+      run: zip -r deploy.zip ./${{ steps.repo_name.outputs.name }} -x "*.git*"
       shell: bash
     - name: Push to Docassemble Playground
       run: |
