@@ -26,10 +26,17 @@ runs:
       shell: bash
     - name: Push to Docassemble Playground
       run: |
-        curl -X POST -H "X-API-Key: ${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}" \
-        -F 'file=@deploy.zip' \
-        -F 'project=${{ inputs.PROJECT_NAME }}' \
-        ${{ inputs.USER_ID ? "-F 'user_id=${{ inputs.USER_ID }}'" : "" }} \
-        ${{ inputs.RESTART ? "-F 'restart=${{ inputs.RESTART }}'" : "" }} \
-        "${{ inputs.SERVER_URL }}/api/playground_install"
+        curl_args=("-X" "POST" "-H" "X-API-Key: ${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}")
+
+        if [ -n "${{ inputs.USER_ID }}" ]; then
+          curl_args+=("-F" "user_id=${{ inputs.USER_ID }}")
+        fi
+
+        if [ -n "${{ inputs.RESTART }}" ]; then
+          curl_args+=("-F" "restart=${{ inputs.RESTART }}")
+        fi
+
+        curl_args+=("-F" "file=@deploy.zip" "-F" "project=${{ inputs.PROJECT_NAME }}" "${{ inputs.SERVER_URL }}/api/playground_install")
+
+        curl "${curl_args[@]}"
       shell: bash
