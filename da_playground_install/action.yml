@@ -21,8 +21,16 @@ runs:
   steps:
     - name: Check out repository
       uses: actions/checkout@v3
+    - run: pwd
+      shell: bash
+    - run: ls -l
+      shell: bash
     - name: Change Working Directory
       run: cd ..
+      shell: bash
+    - run: pwd
+      shell: bash
+    - run: ls -l
       shell: bash
     - name: Zip repository contents excluding .git
       run: zip -r deploy.zip . -x "*.git*"
