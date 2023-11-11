@@ -27,10 +27,15 @@ runs:
       uses: actions/checkout@v3
     - name: Zip repository contents excluding .git
       if: inputs.GITHUB_URL == '' && inputs.PIP_PACKAGE == ''
-      run: zip -r package.zip . -x "*.git*"
+      run: |
+        cd ..
+
+        zip -r deploy.zip . -x "*.git*"
       shell: bash
     - name: Install or Update Package on Docassemble Server
       run: |
+        cd ..
+
         curl_args=("-X" "POST" "-H" "X-API-Key: ${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}")
 
         if [ -n "${{ inputs.GITHUB_URL }}" ]; then
@@ -44,7 +49,7 @@ runs:
         if [ -n "${{ inputs.PIP_PACKAGE }}" ]; then
           curl_args+=("-F" "pip=${{ inputs.PIP_PACKAGE }}")
         elif [ -z "${{ inputs.GITHUB_URL }}" ]; then
-          curl_args+=("-F" "zip=@package.zip")
+          curl_args+=("-F" "zip=@deploy.zip")
         fi
 
         curl_args+=("-F" "restart=${{ inputs.RESTART }}")
