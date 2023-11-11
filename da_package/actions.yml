@@ -1,0 +1,41 @@
+name: 'Install or Update Docassemble Package'
+description: 'Installs or updates a package on a Docassemble server'
+inputs:
+  SERVER_URL:
+    description: 'URL of the Docassemble server'
+    required: true
+  DOCASSEMBLE_DEVELOPER_API_KEY:
+    description: 'API key for the Docassemble server'
+    required: true
+  GITHUB_URL:
+    description: 'GitHub URL of the package to install (optional)'
+    required: false
+  BRANCH:
+    description: 'Branch name for the GitHub package (optional)'
+    required: false
+  PIP_PACKAGE:
+    description: 'Name of the Python package to install from PyPI (optional)'
+    required: false
+  RESTART:
+    description: 'Set to 0 to skip server restart after installation (optional)'
+    default: '1'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+    - name: Zip repository contents excluding .git
+      if: inputs.GITHUB_URL == '' && inputs.PIP_PACKAGE == ''
+      run: zip -r package.zip . -x "*.git*"
+      shell: bash
+    - name: Install or Update Package on Docassemble Server
+      run: |
+        curl -X POST -H "X-API-Key: ${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}" \
+        ${inputs.GITHUB_URL ? "-F github_url=${{ inputs.GITHUB_URL }}" : ""} \
+        ${inputs.BRANCH ? "-F branch=${{ inputs.BRANCH }}" : ""} \
+        ${inputs.PIP_PACKAGE ? "-F pip=${{ inputs.PIP_PACKAGE }}" : ""} \
+        ${inputs.GITHUB_URL == '' && inputs.PIP_PACKAGE == '' ? "-F zip=@package.zip" : ""} \
+        -F "restart=${{ inputs.RESTART }}" \
+        "${{ inputs.SERVER_URL }}/api/package"
+      shell: bash

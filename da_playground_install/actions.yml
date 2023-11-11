@@ -1,0 +1,35 @@
+name: 'Deploy to Docassemble Playground'
+description: 'Pushes code to a specified Docassemble playground on merge to main'
+inputs:
+  SERVER_URL:
+    description: 'URL of the server to push to'
+    required: true
+  PROJECT_NAME:
+    description: 'Name of the project to push to'
+    required: true
+  DOCASSEMBLE_DEVELOPER_API_KEY:
+    description: 'API key for the Docassemble playground'
+    required: true
+  USER_ID:
+    description: 'User ID for the Docassemble user (optional)'
+    required: false
+  RESTART:
+    description: 'Control server restart (0 to skip restart, optional)'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+    - name: Zip repository contents excluding .git
+      run: zip -r deploy.zip . -x "*.git*"
+      shell: bash
+    - name: Push to Docassemble Playground
+      run: |
+        curl -X POST -H "X-API-Key: ${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}" \
+        -F 'file=@deploy.zip' \
+        -F 'project=${{ inputs.PROJECT_NAME }}' \
+        ${{ inputs.USER_ID ? "-F 'user_id=${{ inputs.USER_ID }}'" : "" }} \
+        ${{ inputs.RESTART ? "-F 'restart=${{ inputs.RESTART }}'" : "" }} \
+        "${{ inputs.SERVER_URL }}/api/playground_install"
+      shell: bash
