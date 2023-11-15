@@ -155,6 +155,59 @@ jobs:
           ERROR_EMAILS: example@example.com,example2@example.com
 ```
 
+### da_playground_install
+
+`playground_install` mirrors the options of the Docassemble /api/playground_install endpoint.
+
+It can be used to install the contents of a repository to a specified Docassemble playground
+and project. This can be useful to make it simple to do interactive end-to-end testing of
+new versions of your project, especially if you want to enable testing of multiple versions
+on a single server.
+
+#### Usage
+
+Create a new file in .github/workflows/, named "playground_publish.yml" or a .yml 
+name of your choice.
+
+The contents should look like:
+
+```yaml
+name: Deploy to Docassemble Playground
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to Docassemble Playground
+        uses: SuffolkLITLab/ALActions/da_playground_install@da-install
+        with:
+          SERVER_URL: ${{ secrets.SERVER_URL }}
+          DOCASSEMBLE_DEVELOPER_API_KEY: ${{ secrets.DOCASSEMBLE_DEVELOPER_API_KEY }}
+          PROJECT_NAME: ${{ secrets.PROJECT_NAME }}
+```
+
+You can either directly edit the SERVER_URL and PROJECT_NAME parameters, or add them as
+GitHub repository secrets. The server URL should look like this:
+
+`https://apps-dev.suffolklitlab.org` or whatever the name of your server is.
+
+### da_package
+
+The `da_package` action is like the `da_playground_install` action, except that it
+installs the current GitHub repository server-wide.
+
+While it can be used to install the package directly from the repository by uploading
+it as a .zip file, typically you will want to use the GitHub url instead to make it
+possible to click the `update` button manually.
+
 ## Development Details
 
 Using [codeql-action](https://github.com/github/codeql-action) as

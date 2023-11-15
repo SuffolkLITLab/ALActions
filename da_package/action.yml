@@ -50,5 +50,7 @@ runs:
 
         curl_args+=("${{ inputs.SERVER_URL }}/api/package")
 
+        echo curl_args
+        
         curl "${curl_args[@]}"
       shell: bash
