@@ -33,14 +33,18 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Check files using the black formatter
-      uses: rickstaa/action-black@v1.1.7
+      uses: psf/black@stable
       id: action_black
       with:
-        black_args: ". --extend-exclude (__init__.py|setup.py)"
+        options: "--extend-exclude (__init__.py|setup.py)"
+        src: "."
+    - run: echo "formatted_files=$(git diff --name-only)" >> $GITHUB_OUTPUT
+      id: formatted
+      shell: bash
     - name: Create Pull Request
-      if: steps.action_black.outputs.is_formatted == 'true' && inputs.MAKE_PR == 'true'
+      if: steps.formatted.outputs.formatted_files != '' && inputs.MAKE_PR == 'true'
       uses: peter-evans/create-pull-request@v3
       with:
         token: ${{ inputs.GITHUB_TOKEN }}
@@ -51,3 +55,6 @@ runs:
           uses the [psf/black](https://github.com/psf/black) formatter to fix these issues.
         base: ${{ github.ref_name }} # Creates pull request onto pull request or commit branch
         branch: actions/black/for_${{ github.ref_name }}
+    - if: steps.formatted.outputs.formatted_files != ''
+      run: exit 1
+      shell: bash
