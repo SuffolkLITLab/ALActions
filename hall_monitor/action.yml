@@ -43,7 +43,7 @@ runs:
             if conn.ok:
                 soup = bs4.BeautifulSoup(conn.text, "html.parser")
             else:
-                print(f"Hall monitor couldn't connect to {os.environ['SERVER_URL']}")
+                print(f"Hall monitor couldn't connect to {os.environ['SERVER_URL']}: {conn.status_code}")
                 exit(1)
         links = soup.find_all("a")
         failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
