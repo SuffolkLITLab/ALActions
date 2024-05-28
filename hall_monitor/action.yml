@@ -88,7 +88,11 @@ runs:
         if os.getenv("SENDGRID_API_KEY"):
           message = Mail(from_email=send_from, to_emails=send_to, subject=subject, html_content=content)
           sg = SendGridAPIClient(api_key=os.environ["SENDGRID_API_KEY"])
-          resp = sg.send(message)
+          try:
+            resp = sg.send(message)
+          except Exception as e:
+            print(f"Error sending email: {e}")
+            exit(2)
         elif os.getenv("MAILGUN_API_KEY") and os.getenv("MAILGUN_DOMAIN"):
           url = f"https://api.mailgun.net/v3/{os.environ['MAILGUN_DOMAIN']}/messages"
           resp = requests.post(url, auth=("api", os.environ["MAILGUN_API_KEY"]), data={
