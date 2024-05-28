@@ -69,7 +69,7 @@ runs:
             exit(0)
 
         send_from = os.getenv("ERROR_EMAIL_FROM", "no-reply@suffolklitlab.org")
-        send_to = [to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")],
+        send_to = [to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")]
         subject = "${{ github.job }} job of ${{ github.repository }} has ${{ steps.check_server.outcome }}"
 
         content = f"""
