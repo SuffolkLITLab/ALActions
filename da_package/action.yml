@@ -1,0 +1,56 @@
+name: 'Install or Update Docassemble Package'
+description: 'Installs or updates a package on a Docassemble server'
+inputs:
+  SERVER_URL:
+    description: 'URL of the Docassemble server'
+    required: true
+  DOCASSEMBLE_DEVELOPER_API_KEY:
+    description: 'API key for the Docassemble server'
+    required: true
+  GITHUB_URL:
+    description: 'GitHub URL of the package to install (optional)'
+    required: false
+  BRANCH:
+    description: 'Branch name for the GitHub package (optional)'
+    required: false
+  PIP_PACKAGE:
+    description: 'Name of the Python package to install from PyPI (optional)'
+    required: false
+runs:
+  using: 'composite'
+  steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+    - name: Zip repository contents excluding .git
+      if: inputs.GITHUB_URL == '' && inputs.PIP_PACKAGE == ''
+      run: |
+        cd ..
+
+        zip -r deploy.zip . -x "*.git*"
+      shell: bash
+    - name: Install or Update Package on Docassemble Server
+      run: |
+        cd ..
+
+        curl_args=("-X" "POST" "-H" "X-API-Key: ${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}")
+
+        if [ -n "${{ inputs.GITHUB_URL }}" ]; then
+          curl_args+=("-F" "github_url=${{ inputs.GITHUB_URL }}")
+        fi
+
+        if [ -n "${{ inputs.BRANCH }}" ]; then
+          curl_args+=("-F" "branch=${{ inputs.BRANCH }}")
+        fi
+
+        if [ -n "${{ inputs.PIP_PACKAGE }}" ]; then
+          curl_args+=("-F" "pip=${{ inputs.PIP_PACKAGE }}")
+        elif [ -z "${{ inputs.GITHUB_URL }}" ]; then
+          curl_args+=("-F" "zip=@deploy.zip")
+        fi
+
+        curl_args+=("${{ inputs.SERVER_URL }}/api/package")
+
+        echo "${curl_args[@]}"
+
+        curl "${curl_args[@]}"
+      shell: bash
