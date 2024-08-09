@@ -1,10 +1,7 @@
 name: DOCX Diff
-
-on:
-  pull_request:
-    paths:
-      - '**/*.docx'
-
+description: |
+  This action compares DOCX files in a pull request with the base branch and generates a diff in HTML format.
+  The HTML diff files are uploaded as artifacts and can be viewed in the 'Artifacts' section of the workflow run.
 jobs:
   docx-diff:
     runs-on: ubuntu-latest
