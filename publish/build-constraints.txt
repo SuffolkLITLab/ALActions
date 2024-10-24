@@ -1,4 +1,0 @@
-# From https://github.com/explosion/thinc/blob/126ea7f10fe746486c8d5cf00e9e2114492a3c31/build-constraints.txt#L1C1-L2C37
-# With additional fix related to https://github.com/SuffolkLITLab/FormFyxer/issues/135
-# build version constraints for use with wheelwright + multibuild
-numpy>=1.25.0,<2.0.0; python_version>='3.9'

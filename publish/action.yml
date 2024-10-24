@@ -36,8 +36,7 @@ runs:
       run: python -m compileall . -q
       shell: bash
     - name: Build a binary wheel and a source tarball
-      # Avoids numpy 2, which breaks some builds. See https://github.com/SuffolkLITLab/ALActions/pull/25
-      run: PIP_CONSTRAINT=https://raw.githubusercontent.com/SuffolkLITLab/ALActions/main/publish/build-constraints.txt python -m build --sdist --wheel --outdir dist/
+      run: python -m build --sdist --wheel --outdir dist/
       shell: bash
     - if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
       name: Ensure github tag is the same as the pypi tag
