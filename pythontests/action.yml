@@ -22,13 +22,10 @@ runs:
             **/requirements.txt
     - run: pip install wheel
       shell: bash
-    # Step 1: Install only docassemble.base to prepare the namespace
-    - run: pip install -v docassemble.base
-      shell: bash
-    # Step 2: Install the remaining dependencies
+    # Step 1: Install dependencies
     - run: pip install -v -r `find . -name requirements.txt`
       shell: bash
-    # Step 3: Install the actual package
+    # Step 2: Install the actual package
     - run: pip install -v --editable .
       shell: bash
     - run: python -m mypy .
