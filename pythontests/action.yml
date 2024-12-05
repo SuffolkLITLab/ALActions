@@ -34,8 +34,11 @@ runs:
       shell: bash
     - run: python -m mypy . --exclude '^build/' --explicit-package-bases
       shell: bash
-    - run: mv docassemble docassemble_local
-      shell: bash    
+    - run: |
+        if [[ -f docassemble/__init__.py ]]; then
+          mv docassemble/__init__.py docassemble/__init__.py.bak
+        fi
+      shell: bash
     - run: python -m unittest discover
       shell: bash      
     - id: output-step
