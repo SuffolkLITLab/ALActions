@@ -28,11 +28,13 @@ runs:
     # Step 2: Install the actual package
     - run: pip install -v .
       shell: bash  
+    - run: export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
+      shell: bash
     - run: python -m mypy . --exclude '^build/' --explicit-package-bases
       shell: bash
     - if: ${{ success() }}
-      run: python -m unittest discover
-      shell: bash
+      run: python -m unittest discover -s ./docassemble/ALToolbox/tests -p "*.py"
+      shell: bash      
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
       shell: bash
