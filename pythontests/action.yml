@@ -28,7 +28,7 @@ runs:
     # Step 2: Install the actual package
     - run: pip install -v .
       shell: bash
-    - run: python -m mypy . --exclude './docassemble/__init__.py' # Ignore the now redundant but likely present docassemble __init__.py
+    - run: python -m mypy . --exclude './build'
       shell: bash
     - if: ${{ success() }}
       run: python -m unittest discover
