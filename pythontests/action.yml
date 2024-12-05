@@ -20,20 +20,22 @@ runs:
         cache-dependency-path: |
             setup.py
             **/requirements.txt
+    - run: python -m venv venv
+      shell: bash
+    - run: source venv/bin/activate
+      shell: bash            
     - run: pip install wheel
       shell: bash
-    # Step 1: Install dependencies
     - run: pip install -v -r `find . -name requirements.txt`
       shell: bash
-    # Step 2: Install the actual package
-    - run: pip install -v .
+    - run: pip install -v --editable . 
       shell: bash  
     - run: export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
       shell: bash
     - run: python -m mypy . --exclude '^build/' --explicit-package-bases
       shell: bash
     - if: ${{ success() }}
-      run: python -m unittest discover -s ./docassemble/ALToolbox/ -p "*.py"
+      run: python -m unittest discover
       shell: bash      
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
