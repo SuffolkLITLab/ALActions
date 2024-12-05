@@ -34,8 +34,8 @@ runs:
       shell: bash
     - run: python -m mypy . --exclude '^build/' --explicit-package-bases
       shell: bash
-    - if: ${{ success() }}
-      run: python -m unittest discover
+    - run: mv docassemble docassemble_local      
+    - run: python -m unittest discover
       shell: bash      
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
