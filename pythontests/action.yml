@@ -20,15 +20,27 @@ runs:
         cache-dependency-path: |
             setup.py
             **/requirements.txt
+    - run: python -m venv venv
+      shell: bash
+    - run: source venv/bin/activate
+      shell: bash            
     - run: pip install wheel
       shell: bash
-    - run: pip install -v --editable . -r `find . -name requirements.txt`
+    - run: pip install -v -r `find . -name requirements.txt`
       shell: bash
-    - run: python -m mypy .
+    - run: pip install -v --editable . 
+      shell: bash  
+    - run: export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
       shell: bash
-    - if: ${{ success() }}
-      run: python -m unittest discover
+    - run: python -m mypy . --exclude '^build/' --explicit-package-bases
       shell: bash
+    - run: |
+        if [[ -f docassemble/__init__.py ]]; then
+          mv docassemble/__init__.py docassemble/__init__.py.bak
+        fi
+      shell: bash
+    - run: python -m unittest discover
+      shell: bash      
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
       shell: bash
