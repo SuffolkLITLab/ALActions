@@ -26,7 +26,7 @@ runs:
     - run: pip install -v -r `find . -name requirements.txt`
       shell: bash
     # Step 2: Install the actual package
-    - run: pip install -v --editable .
+    - run: pip install -v .
       shell: bash
     - run: python -m mypy .
       shell: bash
