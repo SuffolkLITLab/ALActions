@@ -28,7 +28,9 @@ runs:
     # Step 2: Install the actual package
     - run: pip install -v .
       shell: bash
-    - run: python -m mypy . --exclude './build'
+    - run: rm -rf build/
+      shell: bash      
+    - run: python -m mypy . 
       shell: bash
     - if: ${{ success() }}
       run: python -m unittest discover
