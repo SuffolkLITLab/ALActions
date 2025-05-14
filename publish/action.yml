@@ -52,7 +52,7 @@ runs:
       shell: bash
     - name: Publish distribution 📦 to PyPI
       if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
-      uses: pypa/gh-action-pypi-publish@release/v1.2.4
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ inputs.PYPI_API_TOKEN }}
     - name: Announce to teams
