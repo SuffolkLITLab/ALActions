@@ -18,11 +18,11 @@ runs:
   steps:
     - name: "ALActions publish: Set environment variables"
       run: |
+        echo "MY_ACTIONS_REPO=${{ github.repository }}" >> $GITHUB_ENV
+        echo "MY_ACTIONS_SERVER=${{ github.server_url}}/${{ github.repository }}" >> $GITHUB_ENV      
         echo "VERSION_TO_PUBLISH=${{ inputs.VERSION_TO_PUBLISH }}" >> $GITHUB_ENV
         echo "TEAMS_BUMP_WEBHOOK=${{ inputs.TEAMS_BUMP_WEBHOOK }}" >> $GITHUB_ENV
         echo "GITHUB_REF_NAME=${{ github.ref }}" >> $GITHUB_ENV
-        echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
-        echo "GITHUB_SERVER=${{ github.server_url}}/${{ github.repository }}" >> $GITHUB_ENV
       shell: bash
     - uses: actions/checkout@v4
     - name: Set up Python 3.13
@@ -58,11 +58,11 @@ runs:
     - name: Announce to teams
       if: ${{ success() && startsWith(github.ref, 'refs/tags') && startsWith(inputs.TEAMS_BUMP_WEBHOOK, 'https:')}}
       run: |
-        project_name=$(echo $GITHUB_REPOSITORY | cut -d '/' -f2 | cut -d '-' -f2)
+        project_name=$(echo $MY_ACTIONS_REPO | cut -d '/' -f2 | cut -d '-' -f2)
         new_version=$(grep version= setup.py | cut -d\' -f 2)
         link_version=$(echo "$GITHUB_REF_NAME")
-        tag_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$GITHUB_REF_NAME"
-        sed -e "s/{{version}}/$new_version/g; s/{{link_version}}/$link_version/g; s/{{project_name}}/$project_name/g; s|{{org_repo_name}}|$GITHUB_REPOSITORY|g; s|{{tag_url}}|$tag_url|g;" << EOF > teams_msg_to_send.json
+        tag_url="$MY_ACTIONS_SERVER_URL/$MY_ACTIONS_REPO/releases/tag/$GITHUB_REF_NAME"
+        sed -e "s/{{version}}/$new_version/g; s/{{link_version}}/$link_version/g; s/{{project_name}}/$project_name/g; s|{{org_repo_name}}|$MY_ACTIONS_REPO|g; s|{{tag_url}}|$tag_url|g;" << EOF > teams_msg_to_send.json
         {
         	"@type": "MessageCard",
         	"@context": "https://schema.org/extensions",
