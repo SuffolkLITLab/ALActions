@@ -23,6 +23,9 @@ runs:
         echo "VERSION_TO_PUBLISH=${{ inputs.VERSION_TO_PUBLISH }}" >> $GITHUB_ENV
         echo "TEAMS_BUMP_WEBHOOK=${{ inputs.TEAMS_BUMP_WEBHOOK }}" >> $GITHUB_ENV
         echo "GITHUB_REF_NAME=${{ github.ref }}" >> $GITHUB_ENV
+        echo "ACTION_REPO=suffolklitlab/alactions" >> $GITHUB_ENV
+        echo "ACTION_REF=${{ github.ref_name }}" >> $GITHUB_ENV
+        echo "REPO_ID=${{ github.repository_id }}" >> $GITHUB_ENV        
       shell: bash
     - uses: actions/checkout@v4
     - name: Set up Python 3.13
