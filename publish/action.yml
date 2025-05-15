@@ -1,118 +1,120 @@
 name: 'ALActions: Publish and Announce'
-description: 'Publishes packages 📦 to PyPI and if successful, announces to teams'
-author: 'Bryce Willey'
+description: 'Builds your package, publishes it to PyPI, and (optionally) announces it to Teams'
+author: 'Bryce Willey and Quinten Steenhuis'
 inputs:
   PYPI_API_TOKEN:
-    description: 'The API token that you use to push packages to Pypy'
+    description: 'The API token to push packages to PyPI'
     required: true
   VERSION_TO_PUBLISH:
-    description: 'The version of the package to publish. Should usually be "GITHUB_REF_NAME"'
+    description: 'The version tag to publish (usually ${{ github.ref_name }})'
     required: true
   TEAMS_BUMP_WEBHOOK:
-    description: 'The webhook url that will make a teams message when POSTed to'
+    description: 'Optional Teams incoming‑webhook URL for release announcements'
     required: false
     default: ''
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - name: "ALActions publish: Set environment variables"
+    # 1) Save some helper vars for later
+    - name: Set environment variables
       run: |
         echo "MY_ACTIONS_REPO=${{ github.repository }}" >> $GITHUB_ENV
-        echo "MY_ACTIONS_SERVER=${{ github.server_url}}/${{ github.repository }}" >> $GITHUB_ENV      
+        echo "MY_ACTIONS_SERVER=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
         echo "VERSION_TO_PUBLISH=${{ inputs.VERSION_TO_PUBLISH }}" >> $GITHUB_ENV
         echo "TEAMS_BUMP_WEBHOOK=${{ inputs.TEAMS_BUMP_WEBHOOK }}" >> $GITHUB_ENV
-        echo "GITHUB_REF_NAME=${{ github.ref }}" >> $GITHUB_ENV
-        echo "ACTION_REPO=suffolklitlab/alactions" >> $GITHUB_ENV
-        echo "ACTION_REF=${{ github.ref_name }}" >> $GITHUB_ENV
-        echo "REPO_ID=${{ github.repository_id }}" >> $GITHUB_ENV        
       shell: bash
+
+    # 2) Checkout your code
     - uses: actions/checkout@v4
+
+    # 3) Ensure Python 3.13 is available
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: "3.13"
-    - name: Install pypa/build
-      run: python -m pip install build --user
+        python-version: '3.13'
+
+    # 4) Install build and twine
+    - name: Install build & twine
+      run: python -m pip install --upgrade build twine
       shell: bash
+
+    # 5) (Optional) Syntax check
     - name: Check syntax for all files
       run: python -m compileall . -q
       shell: bash
-    - name: Build a binary wheel and a source tarball
+
+    # 6) Build your sdist + wheel
+    - name: Build distributions
       run: python -m build --sdist --wheel --outdir dist/
       shell: bash
-    - if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
-      name: Ensure github tag is the same as the pypi tag
+
+    # 7) Verify that the Git tag matches your package version
+    - name: Ensure Git tag matches package version
+      if: startsWith(github.ref, 'refs/tags')
       run: |
-        new_version=$(grep version= setup.py | cut -d\' -f 2)
-        [ "$GITHUB_REF_NAME" = "v$new_version" ]
-      shell: bash
-    - if: ${{ failure() }}
-      name: failed step
-      run: |
-        new_version=$(grep version= setup.py | cut -d\' -f 2)
-        echo "Github tag name ($GITHUB_REF_NAME) doesn't match the setup.py version (v$new_version). Not publishing to pypi"
-      shell: bash
-    - name: Publish distribution 📦 to PyPI
-      if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ inputs.PYPI_API_TOKEN }}
-    - name: Announce to teams
-      if: ${{ success() && startsWith(github.ref, 'refs/tags') && startsWith(inputs.TEAMS_BUMP_WEBHOOK, 'https:')}}
-      run: |
-        project_name=$(echo $MY_ACTIONS_REPO | cut -d '/' -f2 | cut -d '-' -f2)
-        new_version=$(grep version= setup.py | cut -d\' -f 2)
-        link_version=$(echo "$GITHUB_REF_NAME")
-        tag_url="$MY_ACTIONS_SERVER_URL/$MY_ACTIONS_REPO/releases/tag/$GITHUB_REF_NAME"
-        sed -e "s/{{version}}/$new_version/g; s/{{link_version}}/$link_version/g; s/{{project_name}}/$project_name/g; s|{{org_repo_name}}|$MY_ACTIONS_REPO|g; s|{{tag_url}}|$tag_url|g;" << EOF > teams_msg_to_send.json
-        {
-        	"@type": "MessageCard",
-        	"@context": "https://schema.org/extensions",
-        	"summary": "{{project_name}} Version released",
-        	"themeColor": "0078D7",
-        	"title": "{{project_name}} Version {{version}} released", 
-        	"sections": [
-        		{
-        			"activityTitle": "Version {{version}}",
-        			"activityImage": "https://avatars.githubusercontent.com/u/33028765?s=200", 
-        			"facts": [
-        				{
-        					"name": "Repository:",
-        					"value": "{{org_repo_name}}"
-        				},
-        				{
-        					"name": "Tag",
-        					"value": "v{{version}}"
-        				}
-        			],
-        			"text": "" 
-        		}
-        	],
-        	"potentialAction": [
-                {
-                    "@type": "OpenUri",
-                    "name": "See Changelog",
-                    "targets": [
-                        {
-                            "os": "default",
-                            "uri": "https://github.com/{{org_repo_name}}/releases/tag/{{link_version}}"
-                        }
-                    ]
-                },
-        		{
-        			"@type": "OpenUri",
-        			"name": "View in GitHub",
-        			"targets": [
-        				{
-        					"os": "default",
-        					"uri": "{{tag_url}}"
-        				}
-        			]
-        		}
-        	]
-        }
-        EOF
-        curl -H "Content-Type:application/json" -d "@teams_msg_to_send.json" "$TEAMS_BUMP_WEBHOOK"
+        pkg_ver=$(grep version= setup.py | cut -d\' -f 2)
+        if [ "v$pkg_ver" != "${VERSION_TO_PUBLISH}" ]; then
+          echo "::error::Git tag (${VERSION_TO_PUBLISH}) does not match setup.py version (v$pkg_ver)"
+          exit 1
+        fi
       shell: bash
 
+    # 8) Publish to PyPI via twine
+    - name: Publish to PyPI
+      if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
+      run: |
+        python -m twine upload \
+          --non-interactive \
+          --repository-url https://upload.pypi.org/legacy/ \
+          --username __token__ \
+          --password "${{ inputs.PYPI_API_TOKEN }}" \
+          dist/*
+      shell: bash
+
+    # 9) Announce in Teams (if provided)
+    - name: Announce to Teams
+      if: ${{ success() && startsWith(github.ref, 'refs/tags') && inputs.TEAMS_BUMP_WEBHOOK != '' }}
+      run: |
+        project_name=$(echo "$MY_ACTIONS_REPO" | cut -d '/' -f2)
+        new_version=$(grep version= setup.py | cut -d\' -f 2)
+        link_version="${VERSION_TO_PUBLISH}"
+        tag_url="$MY_ACTIONS_SERVER/releases/tag/$link_version"
+
+        # build the JSON payload
+        cat <<EOF > teams_msg_to_send.json
+{
+  "@type": "MessageCard",
+  "@context": "https://schema.org/extensions",
+  "summary": "$project_name Version released",
+  "themeColor": "0078D7",
+  "title": "$project_name Version $new_version released",
+  "sections": [{
+    "activityTitle": "Version $new_version",
+    "activityImage": "https://avatars.githubusercontent.com/u/33028765?s=200",
+    "facts": [
+      { "name": "Repository:", "value": "$MY_ACTIONS_REPO" },
+      { "name": "Tag",        "value": "v$new_version" }
+    ],
+    "text": ""
+  }],
+  "potentialAction": [
+    {
+      "@type": "OpenUri",
+      "name": "See Changelog",
+      "targets": [{ "os": "default", "uri": "https://github.com/$MY_ACTIONS_REPO/releases/tag/$link_version" }]
+    },
+    {
+      "@type": "OpenUri",
+      "name": "View in GitHub",
+      "targets": [{ "os": "default", "uri": "$tag_url" }]
+    }
+  ]
+}
+EOF
+
+        # fire off the Teams message
+        curl -H "Content-Type:application/json" \
+             -d "@teams_msg_to_send.json" \
+             "${{ inputs.TEAMS_BUMP_WEBHOOK }}"
+      shell: bash
