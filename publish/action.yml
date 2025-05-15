@@ -1,12 +1,13 @@
 name: 'ALActions: Publish and Announce'
 description: 'Builds your package, publishes it to PyPI, and (optionally) announces it to Teams'
-author: 'Bryce Willey and Quinten Steenhuis'
+author: 'Bryce Willey'
+
 inputs:
   PYPI_API_TOKEN:
     description: 'The API token to push packages to PyPI'
     required: true
   VERSION_TO_PUBLISH:
-    description: 'The version tag to publish (usually ${{ github.ref_name }})'
+    description: 'The version tag to publish (e.g. v1.2.3)'
     required: true
   TEAMS_BUMP_WEBHOOK:
     description: 'Optional Teams incoming‑webhook URL for release announcements'
@@ -16,53 +17,48 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    # 1) Save some helper vars for later
     - name: Set environment variables
+      shell: bash
       run: |
-        echo "MY_ACTIONS_REPO=${{ github.repository }}" >> $GITHUB_ENV
-        echo "MY_ACTIONS_SERVER=https://github.com/${{ github.repository }}" >> $GITHUB_ENV
         echo "VERSION_TO_PUBLISH=${{ inputs.VERSION_TO_PUBLISH }}" >> $GITHUB_ENV
         echo "TEAMS_BUMP_WEBHOOK=${{ inputs.TEAMS_BUMP_WEBHOOK }}" >> $GITHUB_ENV
-      shell: bash
 
-    # 2) Checkout your code
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-    # 3) Ensure Python 3.13 is available
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
         python-version: '3.13'
 
-    # 4) Install build and twine
     - name: Install build & twine
-      run: python -m pip install --upgrade build twine
       shell: bash
-
-    # 5) (Optional) Syntax check
-    - name: Check syntax for all files
-      run: python -m compileall . -q
-      shell: bash
-
-    # 6) Build your sdist + wheel
-    - name: Build distributions
-      run: python -m build --sdist --wheel --outdir dist/
-      shell: bash
-
-    # 7) Verify that the Git tag matches your package version
-    - name: Ensure Git tag matches package version
-      if: startsWith(github.ref, 'refs/tags')
       run: |
-        pkg_ver=$(grep version= setup.py | cut -d\' -f 2)
+        python -m pip install --upgrade build twine
+
+    - name: Check syntax
+      shell: bash
+      run: |
+        python -m compileall . -q
+
+    - name: Build distributions
+      shell: bash
+      run: |
+        python -m build --sdist --wheel --outdir dist/
+
+    - name: Ensure Git tag matches package version
+      if: ${{ startsWith(github.ref, 'refs/tags') }}
+      shell: bash
+      run: |
+        pkg_ver=$(grep version= setup.py | cut -d"'" -f2)
         if [ "v$pkg_ver" != "${VERSION_TO_PUBLISH}" ]; then
           echo "::error::Git tag (${VERSION_TO_PUBLISH}) does not match setup.py version (v$pkg_ver)"
           exit 1
         fi
-      shell: bash
 
-    # 8) Publish to PyPI via twine
     - name: Publish to PyPI
       if: ${{ success() && startsWith(github.ref, 'refs/tags') }}
+      shell: bash
       run: |
         python -m twine upload \
           --non-interactive \
@@ -70,31 +66,29 @@ runs:
           --username __token__ \
           --password "${{ inputs.PYPI_API_TOKEN }}" \
           dist/*
-      shell: bash
 
-    # 9) Announce in Teams (if provided)
     - name: Announce to Teams
       if: ${{ success() && startsWith(github.ref, 'refs/tags') && inputs.TEAMS_BUMP_WEBHOOK != '' }}
+      shell: bash
       run: |
-        project_name=$(echo "$MY_ACTIONS_REPO" | cut -d '/' -f2)
-        new_version=$(grep version= setup.py | cut -d\' -f 2)
+        project_name=$(basename "$GITHUB_REPOSITORY" | cut -d'-' -f2)
+        new_version=$(grep version= setup.py | cut -d"'" -f2)
         link_version="${VERSION_TO_PUBLISH}"
-        tag_url="$MY_ACTIONS_SERVER/releases/tag/$link_version"
+        tag_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${link_version}"
 
-        # build the JSON payload
         cat <<EOF > teams_msg_to_send.json
 {
   "@type": "MessageCard",
   "@context": "https://schema.org/extensions",
-  "summary": "$project_name Version released",
+  "summary": "${project_name} Version released",
   "themeColor": "0078D7",
-  "title": "$project_name Version $new_version released",
+  "title": "${project_name} Version ${new_version} released",
   "sections": [{
-    "activityTitle": "Version $new_version",
+    "activityTitle": "Version ${new_version}",
     "activityImage": "https://avatars.githubusercontent.com/u/33028765?s=200",
     "facts": [
-      { "name": "Repository:", "value": "$MY_ACTIONS_REPO" },
-      { "name": "Tag",        "value": "v$new_version" }
+      { "name": "Repository:", "value": "${GITHUB_REPOSITORY}" },
+      { "name": "Tag",        "value": "v${new_version}" }
     ],
     "text": ""
   }],
@@ -102,19 +96,23 @@ runs:
     {
       "@type": "OpenUri",
       "name": "See Changelog",
-      "targets": [{ "os": "default", "uri": "https://github.com/$MY_ACTIONS_REPO/releases/tag/$link_version" }]
+      "targets": [{
+        "os": "default",
+        "uri": "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${link_version}"
+      }]
     },
     {
       "@type": "OpenUri",
       "name": "View in GitHub",
-      "targets": [{ "os": "default", "uri": "$tag_url" }]
+      "targets": [{
+        "os": "default",
+        "uri": "${tag_url}"
+      }]
     }
   ]
 }
 EOF
 
-        # fire off the Teams message
-        curl -H "Content-Type:application/json" \
+        curl -H "Content-Type: application/json" \
              -d "@teams_msg_to_send.json" \
              "${{ inputs.TEAMS_BUMP_WEBHOOK }}"
-      shell: bash
