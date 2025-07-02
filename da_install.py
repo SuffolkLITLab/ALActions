@@ -45,8 +45,7 @@ def make_server_payload():
   files = {}
   if pypi_package:
     payload["pip"] = pypi_package
-
-  if github_url:
+  elif github_url:
     payload["github_url"] = github_url
     if github_branch:
       payload['branch'] = github_branch
@@ -95,13 +94,14 @@ def install_to_server(install_url, headers, payload, polling_url):
   return 5
 
 def main():
+  print("Starting install to docassemble server")
   server_url = os.environ['SERVER_URL']
 
   headers = {"X-API-KEY": os.environ['DOCASSEMBLE_DEVELOPER_API_KEY']}
   if os.environ['INSTALL_TYPE'] == 'playground':
-    payload = make_playground_payload()
     install_url = f"{server_url}/api/playground_install"
     polling_url = f"{server_url}/api/restart_status"
+    payload = make_playground_payload()
   else:
     install_url = f"{server_url}/api/package"
     polling_url = f"{server_url}/api/package_update_status"

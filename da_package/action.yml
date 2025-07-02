@@ -41,7 +41,7 @@ runs:
         echo "GITHUB_BRANCH=${{ inputs.GITHUB_BRANCH }}" >> $GITHUB_ENV
         echo "PYPI_PACKAGE=${{ inputs.PYPI_PACKAGE }}" >> $GITHUB_ENV
       shell: bash
-    - run: python ${{ github.action_path }}/../da_install.py
+    - run: python -u ${{ github.action_path }}/../da_install.py
       shell: bash
 
 

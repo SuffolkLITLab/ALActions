@@ -37,7 +37,7 @@ runs:
         echo "USER_ID=${{ inputs.USER_ID }}" >> $GITHUB_ENV
         echo "RESTART=${{ inputs.RESTART }}" >> $GITHUB_ENV
       shell: bash
-    - run: python ${{ github.action_path }}/../da_install.py
+    - run: python -u ${{ github.action_path }}/../da_install.py
       shell: bash
 
 
