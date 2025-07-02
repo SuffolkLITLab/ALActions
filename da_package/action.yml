@@ -12,7 +12,7 @@ inputs:
     description: "The URL of the docassemble server that you want to install this package on"
     required: true
   DOCASSEMBLE_DEVELOPER_API_KEY:
-    description: "API key of an account that has premissions to install packages to the docassemble server"
+    description: "API key of an account that has permissions to install packages to the docassemble server"
     required: true
   GITHUB_URL:
     description: 'GitHub URL of the package to install (optional)'

@@ -68,13 +68,15 @@ def install_to_server(install_url, headers, payload, polling_url):
   # Just loop a bunch of times until we are sure that it installed.
   task_id = resp.json()["task_id"]
   sleep_count = 0
-  while sleep_count < 10:
+  MAX_SLEEP_COUNT = 15
+  while sleep_count < MAX_SLEEP_COUNT:
     updated_resp = requests.get(polling_url, params={"task_id": task_id}, headers=headers)
     if not updated_resp.ok:
       print(f"Not able to determine if {payload['data']} finished installing: {resp.text}")
       return 2
     body = updated_resp.json()
     if body['status'] == 'working':
+      print(f"waiting (for {(MAX_SLEEP_COUNT - sleep_count) * 10} more seconds)")
       time.sleep(10)
       sleep_count += 1
 

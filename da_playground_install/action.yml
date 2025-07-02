@@ -8,13 +8,13 @@ inputs:
     description: "The URL of the docassemble server that you want to install this package on"
     required: true
   DOCASSEMBLE_DEVELOPER_API_KEY:
-    description: "API key of an account that has premissions to install packages to the docassemble server"
+    description: "API key of an account that has permissions to install packages to the docassemble server"
     required: true
   PROJECT_NAME:
     description: 'Name of the playground project to push to'
     required: true
   USER_ID:
-    description: User ID for the Docassemble user (defaults to the account the API key came from)
+    description: User ID (numerical, not email) for the Docassemble user (defaults to the account the API key came from).
     required: false
   RESTART:
     description: Control server restart (0 to skip restart)
