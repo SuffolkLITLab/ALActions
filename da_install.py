@@ -11,7 +11,7 @@ def zip_current_dir():
   with zipfile.ZipFile(zip_bytes, 'w', zipfile.ZIP_DEFLATED) as zip_handle:
     for root, dirs, files in os.walk(".", topdown=True):
         # Modifying dirs in place will skip the .git directory
-        dirs[:] = [d for d in dirs if d != '.git']
+        dirs[:] = [d for d in dirs if d != '.git' and d != '.mypy_cache']
         for file in files:
             zip_handle.write(os.path.join(root, file), 
                              os.path.relpath(os.path.join(root, file), 
