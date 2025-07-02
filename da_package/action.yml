@@ -1,0 +1,47 @@
+name: Install or Update Docassemble package
+description: |
+    To continually deploy docassemble packages, this action will install GitHub packages to a given docassemble server.
+
+    Will either install the package from (in order of precedence):
+
+    * a given PyPI package (if given)
+    * a given Github URL and branch (if given, branch defaults to GitHub's default branch (usually `main`))
+    * the currently checked out repository (i.e. you must run `actions/checkout` in your own action first)
+inputs:
+  SERVER_URL:
+    description: "The URL of the docassemble server that you want to install this package on"
+    required: true
+  DOCASSEMBLE_DEVELOPER_API_KEY:
+    description: "API key of an account that has permissions to install packages to the docassemble server"
+    required: true
+  GITHUB_URL:
+    description: 'GitHub URL of the package to install (optional)'
+    required: false
+  GITHUB_BRANCH:
+    description: 'Branch of the GitHub repo of the package to install (optional)'
+    required: false
+  PYPI_PACKAGE:
+    description: 'Name of Python to install from PyPI (optional)'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+    - run: pip install requests
+      shell: bash
+    - name: Setup environment variables (hide inputs)
+      run: |
+        echo "INSTALL_TYPE=server" >> $GITHUB_ENV
+
+        echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+        echo "DOCASSEMBLE_DEVELOPER_API_KEY=${{ inputs.DOCASSEMBLE_DEVELOPER_API_KEY }}" >> $GITHUB_ENV
+        echo "GITHUB_URL=${{ inputs.GITHUB_URL }}" >> $GITHUB_ENV
+        echo "GITHUB_BRANCH=${{ inputs.GITHUB_BRANCH }}" >> $GITHUB_ENV
+        echo "PYPI_PACKAGE=${{ inputs.PYPI_PACKAGE }}" >> $GITHUB_ENV
+      shell: bash
+    - run: python -u ${{ github.action_path }}/../da_install.py
+      shell: bash
+
+
