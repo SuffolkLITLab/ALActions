@@ -40,11 +40,12 @@ runs:
         fi
       shell: bash
     - run: |
-        # Run tests in regular packages
-        python -m unittest discover
         if [[ -d docassemble ]]; then
           # Run tests in implicit namespace packages
           python -m unittest discover docassemble
+        else
+          # Run tests in regular packages
+          python -m unittest discover
         fi
       shell: bash      
     - id: output-step
