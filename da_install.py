@@ -72,7 +72,7 @@ def install_to_server(install_url, headers, payload, polling_url):
   while sleep_count < MAX_SLEEP_COUNT:
     updated_resp = requests.get(polling_url, params={"task_id": task_id}, headers=headers)
     if not updated_resp.ok:
-      print(f"Not able to determine if {payload['data']} finished installing: {resp.text}")
+      print(f"Not able to determine if {payload['data']} finished installing: {updated_resp.status_code}: {updated_resp.text}")
       return 2
     body = updated_resp.json()
     if body['status'] == 'working':
