@@ -73,7 +73,12 @@ def install_to_server(install_url, headers, payload, polling_url):
     updated_resp = requests.get(polling_url, params={"task_id": task_id}, headers=headers)
     if not updated_resp.ok:
       print(f"Not able to determine if {payload['data']} finished installing: {updated_resp.status_code}: {updated_resp.text}")
-      return 2
+      if updated_resp.status_code == 504:
+        printf("Waiting for a minute to see if the server comes back up")
+        time.sleep(60)
+        continue
+      else:
+        return 2
     body = updated_resp.json()
     if body['status'] == 'working':
       print(f"waiting (for {(MAX_SLEEP_COUNT - sleep_count) * 10} more seconds)")
