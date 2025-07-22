@@ -74,7 +74,7 @@ def install_to_server(install_url, headers, payload, polling_url):
     if not updated_resp.ok:
       print(f"Not able to determine if {payload['data']} finished installing: {updated_resp.status_code}: {updated_resp.text}")
       if updated_resp.status_code == 504:
-        printf("Waiting for a minute to see if the server comes back up")
+        print("Waiting for a minute to see if the server comes back up")
         time.sleep(60)
         continue
       else:
