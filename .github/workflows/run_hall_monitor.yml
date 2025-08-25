@@ -2,9 +2,9 @@ name: Use hall monitor to see if any servers are down
 on:
   workflow_dispatch:
   schedule:
-    # run once every hour
+    # run once every 30 minutes
     # * is a special character in YAML so you have to quote this string
-    - cron:  "0 * * * *"
+    - cron:  "0,30 * * * *"
 
 jobs:
   apps-dev-monitor:
@@ -39,5 +39,37 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: massaccess@suffolk.edu
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
-      - run: echo "Finished running monitor for prod"
-  
+      - run: echo "Finished running monitor for Suffolk prod"
+  mn-prod-monitor:
+    runs-on: ubuntu-latest
+    name: Check Minnesota's server for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://docs.lawhelpmn.org"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for MN prod"
+  vt-prod-monitor:
+    runs-on: ubuntu-latest
+    name: Check Vermont's server for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://apps.vtcourtforms.org"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for VT prod"
+  ak-prod-monitor:
+    runs-on: ubuntu-latest
+    name: Check Alaska's server for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://courtguide.akcourts.gov"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for AK prod"
