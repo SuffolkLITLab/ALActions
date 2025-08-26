@@ -6,6 +6,9 @@ inputs:
   SERVER_URL:
     description: "The url of the docassemble server that you want to check (with or without trailing slash)"
     required: true
+  CHECK_TYPE:
+    description: "Whether to check docassemble's list of installed interviews (default), or just the 'homepage' (i.e. /)"
+    required: false
   SENDGRID_API_KEY:
     description: "The API Key of a sendgrid account; used to send email notifications when things fail"
     required: false
@@ -32,6 +35,7 @@ runs:
       shell: bash
     - run: |
         echo "SERVER_URL=${{inputs.SERVER_URL}}" >> $GITHUB_ENV
+        echo "CHECK_TYPE=${{inputs.CHECK_TYPE}}" >> $GITHUB_ENV
       shell: bash
     - id: check_server
       run: |
@@ -40,7 +44,7 @@ runs:
     - if: ${{ failure() }}
       run: |
         python -u ${{ github.action_path }}/send_error_email.py
-      shell: python
+      shell: bash
       env:
         ERROR_EMAIL_FROM: ${{ inputs.ERROR_EMAIL_FROM }}
         ERROR_EMAILS: ${{ inputs.ERROR_EMAILS }}
