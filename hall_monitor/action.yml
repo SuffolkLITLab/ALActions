@@ -43,7 +43,7 @@ runs:
       shell: bash 
     - if: ${{ failure() }}
       run: |
-        python -u ${{ github.action_path }}/send_error_email.py
+        python -u ${{ github.action_path }}/send_error_email.py "${{ github.repository }}" "${{ github.workflow }}" "${{ github.job}}" "${{ steps.check_server.outcome }}"
       shell: bash
       env:
         ERROR_EMAIL_FROM: ${{ inputs.ERROR_EMAIL_FROM }}

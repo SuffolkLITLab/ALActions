@@ -3,27 +3,28 @@
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import os
+import sys
 import requests
 
-def main():
+def main(github_repository, github_workflow, github_job, check_outcome):
     if not os.getenv("ERROR_EMAILS"):
         print("No error emails passed in! Not going to notify them of this failure")
         return 0
 
     send_from = os.getenv("ERROR_EMAIL_FROM", "no-reply@suffolklitlab.org")
     send_to = [to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")]
-    subject = "${{ github.job }} job of ${{ github.repository }} has ${{ steps.check_server.outcome }}"
+    subject = f"{github_job} job of {github_repository} has {check_outcome}"
 
     content = f"""
-        <p>Hey there! Your Hall Monitor Action has a status of ${{ steps.check_server.outcome }}.</p>
+        <p>Hey there! Your Hall Monitor Action has a status of {check_outcome}.</p>
         <p>You should check all of the interviews at this URL: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a></p>
         <p>{os.getenv('ERRORED_INTERVIEWS', '') }</p>
         <p>More info:
         <ul>
-          <li> Github Repository: ${{ github.repository }} </li>
-          <li> Github workflow: ${{ github.workflow }} </li>
-          <li> Github job: ${{ github.job }} </li>
-          <li> Job status: ${{ steps.check_server.outcome }} </li>
+          <li> Github Repository: {github_repository} </li>
+          <li> Github workflow: {github_workflow} </li>
+          <li> Github job: {github_job} </li>
+          <li> Job status: {check_outcome} </li>
         </ul></p>
         """
 
@@ -58,5 +59,8 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    return_value = main()
+    if len(sys.argv) <= 4:
+        print("Required args: github repository, workflow, job, and check step's outcome.")
+        exit(3)
+    return_value = main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     exit(return_value)
