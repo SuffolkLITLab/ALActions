@@ -17,7 +17,7 @@ jobs:
           SERVER_URL: "https://efile.suffolklitlab.org/about"
           CHECK_TYPE: "homepage"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
   test-monitor:
     runs-on: ubuntu-latest
@@ -28,6 +28,6 @@ jobs:
           SERVER_URL: "https://efile-test.suffolklitlab.org/about"
           CHECK_TYPE: "homepage"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
         

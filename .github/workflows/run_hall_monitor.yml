@@ -16,7 +16,7 @@ jobs:
           SERVER_URL: "https://apps-dev.suffolklitlab.org"
           CHECK_TYPE: "all"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for dev"
   apps-test-monitor:
@@ -28,7 +28,7 @@ jobs:
           SERVER_URL: "https://apps-test.suffolklitlab.org"
           CHECK_TYPE: "all"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for test"
   apps-prod-monitor:
@@ -40,7 +40,7 @@ jobs:
           SERVER_URL: "https://apps.suffolklitlab.org"
           CHECK_TYPE: "all"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for Suffolk prod"
   mn-prod-monitor:
@@ -52,7 +52,7 @@ jobs:
           SERVER_URL: "https://docs.lawhelpmn.org"
           CHECK_TYPE: "homepage"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for MN prod"
   vt-prod-monitor:
@@ -64,7 +64,7 @@ jobs:
           SERVER_URL: "https://apps.vtcourtforms.org"
           CHECK_TYPE: "homepage"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for VT prod"
   ak-prod-monitor:
@@ -76,6 +76,6 @@ jobs:
           SERVER_URL: "https://courtguide.akcourts.gov"
           CHECK_TYPE: "homepage"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: massaccess@suffolk.edu
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for AK prod"
