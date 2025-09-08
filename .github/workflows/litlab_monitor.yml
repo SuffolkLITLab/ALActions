@@ -1,0 +1,69 @@
+name: See if any litlab tool servers are down
+on:
+  workflow_dispatch:
+  schedule:
+    # run once every 30 minutes
+    # * is a special character in YAML so you have to quote this string
+    - cron:  "0,30 * * * *"
+
+jobs:
+  ratemypdf:
+    runs-on: ubuntu-latest
+    name: Check that RateMyPdf is up
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://ratemypdf.com"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for ratemypdf"
+  suffolklitlab-org:
+    runs-on: ubuntu-latest
+    name: Check that suffolklitlab.org is up 
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://suffolklitlab.org"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for suffolklitlab"
+  spot-suffolk:
+    runs-on: ubuntu-latest
+    name: Check that spot.suffolklitlab.org is up
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://spot.suffolklitlab.org"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for SPOT"
+  made-gbls:
+    runs-on: ubuntu-latest
+    name: Check that MADE on GBLS's server is up
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://interviews.gbls.org"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for MADE"
+  courtformsonline:
+    runs-on: ubuntu-latest
+    name: Check that Court Forms Online is up 
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://courtformsonline.org"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for Court Forms Online"
