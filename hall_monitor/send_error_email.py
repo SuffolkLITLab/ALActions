@@ -15,10 +15,16 @@ def main(github_repository, github_workflow, github_job, check_outcome):
     send_to = [to_send.strip() for to_send in os.environ["ERROR_EMAILS"].split(",")]
     subject = f"{github_job} job of {github_repository} has {check_outcome}"
 
+    error_links = ""
+    for url in os.getenv('ERRORED_INTERVIEWS', '').split(','):
+        error_links += f'<li><a href="{url}">{url}</a></li>\n'
+
     content = f"""
         <p>Hey there! Your Hall Monitor Action has a status of {check_outcome}.</p>
-        <p>You should check all of the interviews at this URL: <a href="{os.environ['SERVER_URL']}/list">{os.environ['SERVER_URL']}/list</a></p>
-        <p>{os.getenv('ERRORED_INTERVIEWS', '') }</p>
+        <p>You should check the links below: 
+        <ul>
+        {error_links}
+        </ul>
         <p>More info:
         <ul>
           <li> Github Repository: {github_repository} </li>
