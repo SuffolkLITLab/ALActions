@@ -27,20 +27,23 @@ def check_server(server_url):
 
 def main():
     server_url = os.environ['SERVER_URL']
-    if os.getenv('CHECK_TYPE') == 'homepage':
-        failed_links = check_homepage(server_url)
-    else:
-        failed_links = check_server(server_url)
+    try:
+        if os.getenv('CHECK_TYPE') == 'homepage':
+            failed_links = check_homepage(server_url)
+        else:
+            failed_links = check_server(server_url)
+    except Exception as ex:
+        failed_links = [""]
 
     if failed_links:
         updated_links = [f"{server_url}{fl}" for fl in failed_links ]
-        err_str = f"Hall Monitor found these links that aren't installed correctly: {','.join(updated_links)}"
+        links_str = f"{','.join(updated_links)}"
         env_file = os.getenv('GITHUB_ENV')
         if env_file:
             with open(env_file, "a") as myfile:
-                myfile.write(f'ERRORED_INTERVIEWS={err_str}')
+                myfile.write(f'ERRORED_INTERVIEWS={links_str}')
         else:
-            print(f"{err_str} (unable to print to GitHub's environment file)")
+            print(f"Hall Monitor found these links are broken: {links_str} (can't print to GitHub's env file)")
         exit(1)
     else:
         print(f"Hall Monitor: all good, no failed links found!")
