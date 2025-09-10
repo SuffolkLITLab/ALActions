@@ -6,10 +6,11 @@ import requests
 import os
 
 def check_homepage(server_url):
-    with requests.get(f"{server_url}/") as conn:
+    with requests.get(f"{server_url}") as conn:
         if not conn.ok:
             print(f"Hall monitor couldn't connect to {server_url}: {conn.status_code}")
-            return [f"{server_url}/"]
+            # Empty string just gets added to the end of the URL, so it's valid.
+            return [""]
     return []
 
 def check_server(server_url):
@@ -17,9 +18,8 @@ def check_server(server_url):
         if conn.ok:
             soup = bs4.BeautifulSoup(conn.text, "html.parser")
         else:
-            # TODO: return server_url/list as a failed_links?
             print(f"Hall monitor couldn't connect to {server_url}: {conn.status_code}")
-            exit(1)
+            return [f"{server_url}/list"]
     links = soup.find_all("a")
     # These links are already checked by docassemble when the page is served
     failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
@@ -34,7 +34,7 @@ def main():
 
     if failed_links:
         updated_links = [f"{server_url}{fl}" for fl in failed_links ]
-        err_str = f"Hall Monitor found these links that aren't installed correctly: {', '.join(updated_links)}"
+        err_str = f"Hall Monitor found these links that aren't installed correctly: {','.join(updated_links)}"
         env_file = os.getenv('GITHUB_ENV')
         if env_file:
             with open(env_file, "a") as myfile:
