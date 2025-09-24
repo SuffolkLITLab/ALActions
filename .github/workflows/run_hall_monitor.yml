@@ -43,6 +43,30 @@ jobs:
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for Suffolk prod"
+  mi-monitor:
+    runs-on: ubuntu-latest
+    name: Check forms.michiganlegalhelp.org for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://forms.michiganlegalhelp.org/"
+          CHECK_TYPE: "all"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for MI prod"
+  mi--dev-monitor:
+    runs-on: ubuntu-latest
+    name: Check da-dev.mplp.org for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://da-dev.mplp.org/"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for MI dev"
   mn-prod-monitor:
     runs-on: ubuntu-latest
     name: Check Minnesota's server for misinstalled interviews
