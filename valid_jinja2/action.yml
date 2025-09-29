@@ -1,0 +1,83 @@
+name: Validate DOCX Jinja expressions
+description: |
+  Validate DOCX templates changed in a commit/pull request to ensure their Jinja expressions
+  compile successfully. Unknown filters generate warnings rather than failures. Generates a 
+  Markdown summary and HTML artifact mirroring the word_diff action conventions.
+
+inputs:
+  base_ref:
+    description: >-
+      Optional git reference to use as the base of the comparison. By default the action detects
+      the appropriate commit from the GitHub event (pull request base, pushed "before" commit, or
+      previous commit for manual runs).
+    required: false
+  working_directory:
+    description: Relative path to run the validation from (defaults to repository root).
+    required: false
+    default: .
+  artifact_name:
+    description: Name of the uploaded artifact bundle.
+    required: false
+    default: jinja-validation
+  output_dir:
+    description: Directory (relative to the working directory) for storing generated HTML reports.
+    required: false
+    default: jinja_validation
+  summary_file:
+    description: File path (relative to the working directory) where the Markdown summary is written.
+    required: false
+    default: jinja_validation_summary.md
+  skip_checkout:
+    description: Set to true to prevent the action from running actions/checkout internally.
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      if: ${{ inputs.skip_checkout != 'true' }}
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install --disable-pip-version-check --no-input docxtpl jinja2
+
+    - id: validate
+      name: Validate DOCX templates
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        INPUT_BASE_REF: ${{ inputs.base_ref }}
+        DOCX_VALIDATION_OUTPUT_DIR: ${{ inputs.output_dir }}
+        DOCX_VALIDATION_SUMMARY_FILE: ${{ inputs.summary_file }}
+      run: |
+        set -euo pipefail
+        python "$GITHUB_ACTION_PATH/check_docx_templates.py" \
+          --output-dir "$DOCX_VALIDATION_OUTPUT_DIR" \
+          --summary "$DOCX_VALIDATION_SUMMARY_FILE"
+
+    - name: Publish validation summary
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        if [[ -f "${{ inputs.summary_file }}" ]]; then
+          cat "${{ inputs.summary_file }}" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "No DOCX validation summary generated." >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - name: Upload validation artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ inputs.working_directory }}/${{ inputs.output_dir }}
+        if-no-files-found: ignore

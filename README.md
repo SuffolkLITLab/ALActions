@@ -155,6 +155,71 @@ jobs:
 - The action automatically determines the correct comparison commits for pull requests and pushes. For manually dispatched runs, supply `base`/`head` inputs on the workflow or pass a `base_ref` input to the action directly.
 - To make the diff run on every push, add a `push` trigger to your workflow or follow the pattern in `.github/workflows/word_diff.yml` to toggle push/PR execution via environment variables.
 
+### valid_jinja2
+
+`valid_jinja2` validates DOCX templates to ensure all embedded Jinja2 expressions have valid syntax. It checks both newly added and modified `.docx` files, distinguishing between syntax errors (which fail the build) and unknown filters (which generate warnings).
+
+#### Key Features
+
+- **Syntax Validation**: Ensures all Jinja2 blocks (`{{ }}`, `{% %}`) have correct syntax
+- **Smart Filter Handling**: Recognizes 70+ common Docassemble and Jinja2 filters, treating unknown filters as warnings rather than errors
+- **Comprehensive Reporting**: Generates HTML artifacts and Markdown summaries for easy review
+- **Git Integration**: Automatically detects added and changed DOCX files in commits and pull requests
+
+#### Sample Workflow
+
+Create `.github/workflows/validate-docx.yml` in your repository:
+
+```yml
+name: Validate DOCX Templates
+
+on:
+  pull_request:
+    paths:
+      - '**/*.docx'
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.docx'
+  workflow_dispatch:
+
+jobs:
+  validate-docx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Needed for git diff comparison
+          
+      - name: Validate DOCX Jinja2 templates
+        uses: SuffolkLITLab/ALActions/valid_jinja2@main
+        with:
+          # Optional: customize artifact and output names
+          artifact_name: jinja-validation-report
+          output_dir: jinja_validation
+          summary_file: jinja_validation_summary.md
+```
+
+#### Input Parameters
+
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| `base_ref` | Git reference for comparison base | Auto-detected from event | No |
+| `artifact_name` | Name for the uploaded validation artifact | `jinja-validation` | No |
+| `output_dir` | Directory for HTML validation reports | `jinja_validation` | No |
+| `summary_file` | Path for Markdown summary file | `jinja_validation_summary.md` | No |
+
+#### Behavior
+
+- **Syntax Errors**: Invalid Jinja2 syntax causes the workflow to fail
+- **Unknown Filters**: Unrecognized filters generate warnings but don't fail the build
+- **Known Filters**: Common Docassemble filters (like `currency`, `date`, `title_case`) don't generate warnings
+- **Artifacts**: Only generated when there are validation issues (errors, warnings, or missing files)
+- **Summary**: Always creates a Markdown summary showing validation results for each file
+
+Artifacts should be visible in the Summary of the action results.
 
 ### publish
 
