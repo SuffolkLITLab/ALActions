@@ -178,8 +178,6 @@ on:
     paths:
       - '**/*.docx'
   push:
-    branches:
-      - main
     paths:
       - '**/*.docx'
   workflow_dispatch:

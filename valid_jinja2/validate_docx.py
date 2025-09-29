@@ -310,6 +310,24 @@ def validate_with_stubbed_filters(docx_path: str, filter_names: Set[str]) -> Val
         return result
 
 
+def extract_filters_from_docx(docx_path: str) -> set:
+    """Extract filter names from DOCX content using regex, regardless of syntax validity."""
+    try:
+        doc = DocxTemplate(docx_path)
+        # Get the raw XML content
+        xml_content = ""
+        for element in doc.docx.element.body.iter():
+            if element.text:
+                xml_content += element.text + " "
+        
+        # Find all Jinja expressions with filters
+        filter_pattern = r'\{\{[^}]*\|\s*([a-zA-Z_][a-zA-Z0-9_]*)'
+        matches = re.findall(filter_pattern, xml_content)
+        return set(matches)
+    except Exception:
+        return set()
+
+
 def get_jinja_errors_with_warnings(the_file: str) -> ValidationResult:
     """
     Validate DOCX file for Jinja2 errors and warnings.
@@ -317,8 +335,12 @@ def get_jinja_errors_with_warnings(the_file: str) -> ValidationResult:
     """
     result = ValidationResult()
     
+    # First, try to extract filters from the raw document content
+    raw_filters = extract_filters_from_docx(the_file)
+    
     # Keep track of all unknown filters we've found
     all_unknown_filters = set()
+    all_syntax_errors = set()  # Track syntax errors to avoid duplicates
     max_iterations = 10  # Prevent infinite loops
     
     for iteration in range(max_iterations):
@@ -339,9 +361,14 @@ def get_jinja_errors_with_warnings(the_file: str) -> ValidationResult:
             else:
                 other_errors.append(error)
         
+        # Add non-filter errors to our result (but avoid duplicates)
+        for error in other_errors:
+            if error not in all_syntax_errors:
+                all_syntax_errors.add(error)
+                result.syntax_errors.append(error)
+        
         if not filter_errors:
-            # All remaining errors are real syntax errors
-            result.syntax_errors.extend(other_errors)
+            # No more filter errors found in validation, but check raw filters
             break
         
         # Extract filter names from the filter errors
@@ -354,15 +381,17 @@ def get_jinja_errors_with_warnings(the_file: str) -> ValidationResult:
                     all_unknown_filters.add(filter_name)
                     found_new_filter = True
         
-        # Also keep any non-filter errors
-        if other_errors:
-            result.syntax_errors.extend(other_errors)
-        
         if not found_new_filter:
             # We didn't find any new filters, so we're stuck
-            # Treat remaining filter errors as real errors
-            result.syntax_errors.extend(filter_errors)
+            # Add remaining filter errors as syntax errors
+            for error in filter_errors:
+                if error not in all_syntax_errors:
+                    all_syntax_errors.add(error)
+                    result.syntax_errors.append(error)
             break
+    
+    # Add any filters we found in raw content that weren't caught by validation
+    all_unknown_filters.update(raw_filters)
     
     # Only add truly unknown filters as warnings (exclude known filters)
     known_filters = get_known_filters()

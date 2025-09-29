@@ -273,8 +273,25 @@ def main() -> None:
             
             summary_lines.append("")
             
-            status = "ERRORS" if error_message else "WARNINGS"
-            print(f"{file}: {status}")
+            # Print detailed information to the action log
+            if error_message and warnings_message:
+                print(f"{file}: ERRORS AND WARNINGS")
+                print("=" * 50)
+                print("ERRORS:")
+                print(error_message)
+                print("\nWARNINGS:")
+                print(warnings_message)
+                print("=" * 50)
+            elif error_message:
+                print(f"{file}: ERRORS")
+                print("=" * 50)
+                print(error_message)
+                print("=" * 50)
+            else:
+                print(f"{file}: WARNINGS")
+                print("=" * 50)
+                print(warnings_message)
+                print("=" * 50)
         else:
             print(f"{file}: OK")
 
