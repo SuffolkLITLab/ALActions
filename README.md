@@ -125,6 +125,36 @@ jobs:
 
 `docsig` can be configured by using `pyproject.toml`. See [the docsig README.md](https://github.com/jshwi/docsig/tree/v0.35.0#commandline) for more info.
 
+### word_diff
+
+`word_diff` converts any changed `.docx` files into Markdown (without introducing extra hard line wraps), diffing the rendered text so reviewers can read the changes directly in GitHub.
+
+#### Usage
+
+```yml
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docx-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Diff Word documents
+        uses: SuffolkLITLab/ALActions/word_diff@main
+        with:
+          # Optional: override the base commit if needed
+          # base_ref: main
+          artifact_name: word-doc-diff
+          output_dir: word_diffs
+          summary_file: word_diff_summary.md
+```
+
+- Unified diffs are written to the job log and appended to the GitHub Actions step summary so you can skim changes without downloading artifacts.
+- HTML side-by-side diffs, plus the converted Markdown files, are uploaded as an artifact (with an `index.html` table of contents by default) for richer review.
+- The action automatically determines the correct comparison commits for pull requests and pushes. For manually dispatched runs, supply `base`/`head` inputs on the workflow or pass a `base_ref` input to the action directly.
+- To make the diff run on every push, add a `push` trigger to your workflow or follow the pattern in `.github/workflows/word_diff.yml` to toggle push/PR execution via environment variables.
+
 
 ### publish
 
