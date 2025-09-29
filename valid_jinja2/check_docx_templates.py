@@ -258,17 +258,25 @@ def main() -> None:
                 summary_lines.append("```")
             
             if error_message:
-                summary_lines.append("<details><summary>Error output</summary>")
+                summary_lines.append("")
+                summary_lines.append("<details>")
+                summary_lines.append("<summary>Error output</summary>")
+                summary_lines.append("")
                 summary_lines.append("```")
                 summary_lines.append(error_message)
                 summary_lines.append("```")
+                summary_lines.append("")
                 summary_lines.append("</details>")
             
             if warnings_message:
-                summary_lines.append("<details><summary>Warnings</summary>")
+                summary_lines.append("")
+                summary_lines.append("<details>")
+                summary_lines.append("<summary>Warnings</summary>")
+                summary_lines.append("")
                 summary_lines.append("```")
                 summary_lines.append(warnings_message)
                 summary_lines.append("```")
+                summary_lines.append("")
                 summary_lines.append("</details>")
             
             summary_lines.append("")
