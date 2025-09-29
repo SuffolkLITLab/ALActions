@@ -1,96 +1,81 @@
-name: DOCX Diff
+name: Diff Word Files
 description: |
-  This action compares DOCX files in a pull request with the base branch and generates a diff in HTML format.
-  The HTML diff files are uploaded as artifacts and can be viewed in the 'Artifacts' section of the workflow run.
-jobs:
-  docx-diff:
-    runs-on: ubuntu-latest
+  Compare changed Word documents by converting them to Markdown without forced line wrapping.
+  Outputs both inline diffs (in the job log and summary) and side-by-side HTML diffs as artifacts.
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Fetch all history for all branches and tags
+inputs:
+  base_ref:
+    description: >-
+      Optional git reference to use as the base of the comparison. By default the action detects
+      the appropriate commit from the GitHub event (pull request base, pushed "before" commit, or
+      previous commit for manual runs).
+    required: false
+  working_directory:
+    description: Relative path to run the diff from (defaults to repository root).
+    required: false
+    default: .
+  artifact_name:
+    description: Name of the uploaded artifact bundle.
+    required: false
+    default: word-doc-diff
+  output_dir:
+    description: Directory (relative to the working directory) for storing generated diff files.
+    required: false
+    default: word_diffs
+  summary_file:
+    description: File path (relative to the working directory) where the Markdown summary is written.
+    required: false
+    default: word_diff_summary.md
+  skip_checkout:
+    description: Set to true to prevent the action from running actions/checkout internally.
+    required: false
+    default: "false"
 
-      - name: Install pandoc and npm
-        run: |
-          sudo apt-get install -y pandoc npm
-          sudo npm install -g diff2html-cli
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      if: ${{ inputs.skip_checkout != 'true' }}
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-      - name: Log base branch and SHA
-        run: |
-          echo "Base branch: ${{ github.event.pull_request.base.ref }}"
-          echo "PR branch SHA: ${{ github.sha }}"
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
 
-      - name: Convert Base DOCX to Markdown
-        run: |
-          mkdir -p converted/base
-          base_branch="origin/${{ github.event.pull_request.base.ref }}"
-          echo "Fetching base branch $base_branch"
-          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          echo "Checking out base branch $base_branch"
-          git checkout $base_branch
-          for file in $(git diff --name-only ${{ github.sha }} $base_branch | grep '.docx'); do
-            echo "Converting $file from base branch"
-            if [[ -f "$file" ]]; then
-              mkdir -p "converted/base/$(dirname "$file")"
-              pandoc "$file" -t markdown -o "converted/base/${file%.docx}.md"
-              echo "Converted $file to converted/base/${file%.docx}.md"
-            else
-              echo "$file does not exist in base branch"
-            fi
-          done
+    - name: Install dependencies
+      shell: bash
+      run: pip install --disable-pip-version-check --no-input docx2python
 
-      - name: Convert PR DOCX to Markdown
-        run: |
-          mkdir -p converted/head
-          git checkout ${{ github.sha }}
-          for file in $(git diff --name-only ${{ github.sha }} origin/${{ github.event.pull_request.base.ref }} | grep '.docx'); do
-            echo "Converting $file from PR branch"
-            if [[ -f "$file" ]]; then
-              mkdir -p "converted/head/$(dirname "$file")"
-              pandoc "$file" -t markdown -o "converted/head/${file%.docx}.md"
-              echo "Converted $file to converted/head/${file%.docx}.md"
-            else
-              echo "$file does not exist in PR branch"
-            fi
-          done
+    - id: diff
+      name: Generate Word diffs
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        INPUT_BASE_REF: ${{ inputs.base_ref }}
+        WORD_DIFF_OUTPUT_DIR: ${{ inputs.output_dir }}
+        WORD_DIFF_SUMMARY_FILE: ${{ inputs.summary_file }}
+      run: |
+        python "$GITHUB_ACTION_PATH/diff_word_documents.py" \
+          --output-dir "$WORD_DIFF_OUTPUT_DIR" \
+          --summary "$WORD_DIFF_SUMMARY_FILE"
 
-      - name: Generate and Display Diff
-        run: |
-          mkdir -p diff_output
-          base_branch="origin/${{ github.event.pull_request.base.ref }}"
-          echo "# DOCX Diffs" > diff_summary.md
-          for file in $(git diff --name-only ${{ github.sha }} $base_branch | grep '.docx'); do
-            if [[ -f "converted/base/${file%.docx}.md" && -f "converted/head/${file%.docx}.md" ]]; then
-              echo "Diff for $file:"
-              mkdir -p "diff_output/$(dirname "$file")"
-              diff "converted/base/${file%.docx}.md" "converted/head/${file%.docx}.md" > "diff_output/${file%.docx}.diff" || true
-              echo "Diff output for $file:"
-              cat "diff_output/${file%.docx}.diff"
-              if [[ -s "diff_output/${file%.docx}.diff" ]]; then
-                diff2html -i file -o stdout -F "diff_output/${file%.docx}.html" -- "diff_output/${file%.docx}.diff"
-                echo "Generated HTML diff for ${file}:"
-                cat "diff_output/${file%.docx}.html"
-                echo "## Diff for ${file}" >> diff_summary.md
-              else
-                echo "No differences found for $file"
-              fi
-            else
-              echo "Converted files for $file do not exist"
-            fi
-          done
+    - name: Publish diff summary
+      if: always()
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        if [[ -f "${{ inputs.summary_file }}" ]]; then
+          cat "${{ inputs.summary_file }}" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "No Word diffs were generated." >> "$GITHUB_STEP_SUMMARY"
+        fi
 
-      - name: Upload Diff Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: docx-diff
-          path: diff_output/
-
-      - name: Add Diff Links to Job Summary
-        if: always()
-        run: |
-          echo "# DOCX Diffs" > $GITHUB_STEP_SUMMARY
-          echo "The diff files have been generated and uploaded as artifacts." >> $GITHUB_STEP_SUMMARY
-          echo "You can download and view the diff files from the 'Artifacts' section in this workflow run." >> $GITHUB_STEP_SUMMARY
-          cat diff_summary.md >> $GITHUB_STEP_SUMMARY
+    - name: Upload diff artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: ${{ inputs.working_directory }}/${{ inputs.output_dir }}
+        if-no-files-found: warn
