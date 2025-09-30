@@ -297,27 +297,6 @@ jobs:
           ERROR_EMAILS: example@example.com,example2@example.com
 ```
 
-### word_diff
-
-Word-diff creates a report of the changes to any .docx files between `main` and the current
-pull request, after converting the files to markdown
-
-#### Usage
-
-```yml
-on:
-  pull_request:
-    paths:
-      - '**/*.docx'
-
-jobs:
-  my-workflow:
-    ...
-    steps:
-    - uses: SuffolkLITLab/ALActions/word_diff@main
-```
-
-
 ## Development Details
 
 Using [codeql-action](https://github.com/github/codeql-action) as
