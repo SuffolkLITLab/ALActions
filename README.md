@@ -297,6 +297,30 @@ jobs:
           ERROR_EMAILS: example@example.com,example2@example.com
 ```
 
+### DA Build
+
+`da_build` confirms:
+
+- The package can build
+- Python all compiles
+- The interview file is minimally correct (python code blocks compile, mako statements compile, we are using known Docassemble keys in the YAML)
+
+#### Usage
+
+```yml
+name: Build and install docassemble
+
+on: push
+
+jobs:
+  build-n-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: SuffolkLITLab/ALActions/da-build@main
+        with:
+          python-version: "3.12"
+```
+
 ## Development Details
 
 Using [codeql-action](https://github.com/github/codeql-action) as
