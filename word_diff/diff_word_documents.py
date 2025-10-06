@@ -15,6 +15,8 @@ import json
 import os
 import pathlib
 import subprocess
+import sys
+import zipfile
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Iterable, Iterator, List, Optional, Sequence, Tuple
@@ -212,19 +214,32 @@ def table_block_to_markdown(block: Sequence[Sequence]) -> str:
 
 
 def convert_docx_to_markdown(data: bytes, file_path: str) -> DocxMarkdown:
-    lines: List[str] = []
-    with docx2python(BytesIO(data), html=True) as document:
-        for block, block_pars in zip(document.body, document.body_pars):
-            if block_is_table(block_pars):
-                table_md = table_block_to_markdown(block)
-                if table_md:
-                    lines.append(table_md)
-                continue
+    def fallback(message: str) -> DocxMarkdown:
+        warning = f"{file_path}: {message}"
+        print(f"WARNING: {warning}", file=sys.stderr)
+        return DocxMarkdown(path=pathlib.Path(file_path), markdown=f"[{message}]")
 
-            for paragraph in iter_paragraphs(block_pars):
-                md = paragraph_to_markdown(paragraph)
-                if md:
-                    lines.append(md)
+    if len(data) < 4 or data[:2] != b"PK":
+        return fallback("content is not a DOCX/ZIP archive")
+
+    lines: List[str] = []
+    try:
+        with docx2python(BytesIO(data), html=True) as document:
+            for block, block_pars in zip(document.body, document.body_pars):
+                if block_is_table(block_pars):
+                    table_md = table_block_to_markdown(block)
+                    if table_md:
+                        lines.append(table_md)
+                    continue
+
+                for paragraph in iter_paragraphs(block_pars):
+                    md = paragraph_to_markdown(paragraph)
+                    if md:
+                        lines.append(md)
+    except zipfile.BadZipFile as exc:
+        return fallback(f"invalid DOCX archive ({exc})")
+    except Exception as exc:
+        return fallback(f"conversion failed: {exc}")
 
     markdown = "\n\n".join(lines).strip()
     return DocxMarkdown(path=pathlib.Path(file_path), markdown=markdown)
