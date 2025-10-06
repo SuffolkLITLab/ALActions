@@ -55,7 +55,7 @@ jobs:
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for MI prod"
-  mi--dev-monitor:
+  mi-dev-monitor:
     runs-on: ubuntu-latest
     name: Check da-dev.mplp.org for misinstalled interviews
     steps:
@@ -103,3 +103,27 @@ jobs:
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
       - run: echo "Finished running monitor for AK prod"
+  ilao-prod-monitor:
+    runs-on: ubuntu-latest
+    name: Check ILAO PROD server is still running
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://easyforms.illinoislegalaid.org"
+          CHECK_TYPE: "homepage"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for ILAO prod"
+  ilao-dev-monitor:
+    runs-on: ubuntu-latest
+    name: Check ILAO Dev server for misinstalled interviews
+    steps:
+      - uses: SuffolkLITLab/ALActions/hall_monitor@main
+        with:
+          SERVER_URL: "https://dev-easyforms.illinoislegalaid.org"
+          CHECK_TYPE: "all"
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
+          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+      - run: echo "Finished running monitor for ILAO Dev"
