@@ -1,13 +1,13 @@
-name: "Build and check docassemble package"
-description: "Builds the package, checks syntax, and runs YAML validation"
+name: Build and check docassemble package
+description: Builds the package, checks syntax, and runs YAML validation
 
 inputs:
   python-version:
-    description: "Python version to use"
+    description: Python version to use
     default: "3.12"
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - uses: actions/checkout@v4
 
