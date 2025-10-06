@@ -61,8 +61,34 @@ def run_git(*args: str) -> str:
     return result.stdout
 
 
+def empty_tree_hash() -> str:
+    """Return the Git object ID for an empty tree."""
+    result = subprocess.run(
+        ["git", "hash-object", "-t", "tree", "/dev/null"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def is_valid_git_ref(ref: Optional[str]) -> bool:
+    if not ref or ref.strip() == "":
+        return False
+    if ref == "0" * 40:
+        return False
+
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", ref],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
 def list_changed_docx(base: str, head: str) -> List[str]:
-    stdout = run_git("diff", "--name-only", base, head, "--", "*.docx")
+    diff_base = base if is_valid_git_ref(base) else empty_tree_hash()
+    stdout = run_git("diff", "--name-only", diff_base, head, "--", "*.docx")
     return [line.strip() for line in stdout.splitlines() if line.strip()]
 
 
@@ -316,4 +342,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
