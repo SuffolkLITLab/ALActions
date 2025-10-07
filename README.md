@@ -316,7 +316,7 @@ jobs:
   build-n-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: SuffolkLITLab/ALActions/da-build@main
+      - uses: SuffolkLITLab/ALActions/da_build@main
         with:
           python-version: "3.12"
 ```
