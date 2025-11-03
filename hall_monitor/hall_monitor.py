@@ -19,7 +19,7 @@ def check_server(server_url):
             soup = bs4.BeautifulSoup(conn.text, "html.parser")
         else:
             print(f"Hall monitor couldn't connect to {server_url}: {conn.status_code}")
-            return [f"{server_url}/list"]
+            return [f"/list"]
     links = soup.find_all("a")
     # These links are already checked by docassemble when the page is served
     failed_links = [link for link in links if "dainterviewhaserror" in (link.get("class") or [])]
