@@ -48,9 +48,43 @@ def run_git(*args: str) -> str:
     return result.stdout
 
 
+def empty_tree_hash() -> str:
+    """Return the Git object ID for an empty tree.
+    
+    This is computed dynamically to support both SHA-1 and SHA-256 repositories.
+    GitHub may pass an all-zero base SHA (0000000000000000000000000000000000000000)
+    when there's no valid "before" state (e.g., initial commits, new branches, or
+    certain push/PR events). Diffing against the empty tree allows us to list all
+    added files without crashing.
+    """
+    result = subprocess.run(
+        ["git", "hash-object", "-t", "tree", "/dev/null"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def is_valid_git_ref(ref: Optional[str]) -> bool:
+    """Check if a git reference is valid and not an all-zero placeholder."""
+    if not ref or ref.strip() == "":
+        return False
+    if ref == "0" * 40:
+        return False
+
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", ref],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0
+
+
 def list_changed_docx(base: str, head: str) -> List[str]:
-    # Get both changed and newly added files
-    stdout = run_git("diff", "--name-only", "--diff-filter=AM", base, head, "--", "*.docx")
+    """List changed DOCX files between base and head, handling invalid refs gracefully."""
+    diff_base = base if is_valid_git_ref(base) else empty_tree_hash()
+    stdout = run_git("diff", "--name-only", "--diff-filter=AM", diff_base, head, "--", "*.docx")
     return [line.strip() for line in stdout.splitlines() if line.strip()]
 
 
@@ -183,8 +217,6 @@ def main() -> None:
     base, head = determine_refs(args.base, args.head)
 
     output_dir = pathlib.Path(args.output_dir)
-    ensure_dir(output_dir)
-
     summary_path = pathlib.Path(args.summary)
     changed = list_changed_docx(base, head)
 
@@ -322,6 +354,7 @@ def main() -> None:
     # (any files were added to html_index beyond the header and closing tag)
     has_issues = len(html_index) > 3  # More than just header, opening <ul>, and closing </ul>
     if has_issues:
+        ensure_dir(output_dir)
         (output_dir / "index.html").write_text("\n".join(html_index), encoding="utf-8")
     
     summary_path.write_text("\n".join(summary_lines).strip() + "\n", encoding="utf-8")
