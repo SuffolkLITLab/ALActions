@@ -15,6 +15,14 @@ from typing import List, Optional, Sequence, Tuple
 
 from validate_docx import get_jinja_errors_with_warnings, ValidationResult
 
+# The well-known Git empty tree object SHA-1 hash. GitHub may pass an all-zero base SHA
+# (0000000000000000000000000000000000000000) in several scenarios:
+# - Initial commit or first push to a branch
+# - New branches where no "before" state exists
+# - Some push/PR events where the base is undefined
+# Diffing against the empty tree allows us to list all added files without crashing.
+EMPTY_TREE_SHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Validate DOCX templates for Jinja errors")
@@ -49,8 +57,22 @@ def run_git(*args: str) -> str:
 
 
 def list_changed_docx(base: str, head: str) -> List[str]:
-    # Get both changed and newly added files
-    stdout = run_git("diff", "--name-only", "--diff-filter=AM", base, head, "--", "*.docx")
+    # Get both changed and newly added files. If base is the all-zero SHA (e.g., initial commit),
+    # compare against the empty tree so the diff works.
+    base_ref = base.strip() if base else ""
+    if base_ref == "0" * 40:
+        base_ref = EMPTY_TREE_SHA
+
+    try:
+        stdout = run_git("diff", "--name-only", "--diff-filter=AM", base_ref, head, "--", "*.docx")
+    except RuntimeError as err:
+        # Fallback: if diff failed (e.g., unknown base), try against the empty tree as a best effort.
+        if base_ref != EMPTY_TREE_SHA:
+            stdout = run_git(
+                "diff", "--name-only", "--diff-filter=AM", EMPTY_TREE_SHA, head, "--", "*.docx"
+            )
+        else:
+            raise err
     return [line.strip() for line in stdout.splitlines() if line.strip()]
 
 
@@ -183,8 +205,6 @@ def main() -> None:
     base, head = determine_refs(args.base, args.head)
 
     output_dir = pathlib.Path(args.output_dir)
-    ensure_dir(output_dir)
-
     summary_path = pathlib.Path(args.summary)
     changed = list_changed_docx(base, head)
 
@@ -322,6 +342,7 @@ def main() -> None:
     # (any files were added to html_index beyond the header and closing tag)
     has_issues = len(html_index) > 3  # More than just header, opening <ul>, and closing </ul>
     if has_issues:
+        ensure_dir(output_dir)
         (output_dir / "index.html").write_text("\n".join(html_index), encoding="utf-8")
     
     summary_path.write_text("\n".join(summary_lines).strip() + "\n", encoding="utf-8")
