@@ -248,7 +248,7 @@ def main() -> None:
             validation_result = validate_bytes(head_bytes)
         except Exception as exc:  # pylint: disable=broad-exception-caught
             validation_result = ValidationResult()
-            validation_result.add_syntax_error(f"Validation crashed: {exc}")
+            validation_result.add_syntax_error(f"Validation crashed: {traceback.format_exc()}")
 
         error_message = validation_result.get_error_message()
         warnings_message = validation_result.get_warnings_message()

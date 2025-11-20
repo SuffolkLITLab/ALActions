@@ -9,6 +9,7 @@ from docxtpl import DocxTemplate
 from jinja2 import Environment, BaseLoader
 from jinja2.ext import Extension
 from jinja2.lexer import Token
+import traceback
 import jinja2.exceptions
 import re
 
@@ -94,9 +95,14 @@ class CallAndDebugUndefined(DebugUndefined):
 
 null_func: Callable = lambda *y: y
 
-registered_jinja_filters: dict = {}
-
+# Jinja filters that docassemble doesn't override, but
+# we don't want to run (we're just checking that they exist)
 builtin_jinja_filters = {
+    "round": null_func
+}
+
+# From parse.py, get_builtin_jinja_filters()
+builtin_docassemble_jinja_filters = {
     "ampersand_filter": null_func,
     "markdown": null_func,
     "add_separators": null_func,
@@ -279,8 +285,8 @@ def validate_with_stubbed_filters(docx_path: str, filter_names: Set[str]) -> Val
         env = DAEnvironment(undefined=CallAndDebugUndefined, extensions=[DAExtension])
         
         # Import and add the existing builtin filters
-        env.filters.update(registered_jinja_filters)
         env.filters.update(builtin_jinja_filters)
+        env.filters.update(builtin_docassemble_jinja_filters)
         
         # Add stub functions for the unknown filters
         null_func = lambda *args, **kwargs: args[0] if args else ""
@@ -306,7 +312,7 @@ def validate_with_stubbed_filters(docx_path: str, filter_names: Set[str]) -> Val
         return result
         
     except Exception as e:
-        result.add_syntax_error(f"Validation with stubbed filters failed: {e}")
+        result.add_syntax_error(f"Validation with stubbed filters failed: {traceback.format_exc()}")
         return result
 
 
