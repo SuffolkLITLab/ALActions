@@ -84,7 +84,10 @@ def is_valid_git_ref(ref: Optional[str]) -> bool:
 def list_changed_docx(base: str, head: str) -> List[str]:
     """List changed DOCX files between base and head, handling invalid refs gracefully."""
     diff_base = base if is_valid_git_ref(base) else empty_tree_hash()
-    stdout = run_git("diff", "--name-only", "--diff-filter=AM", diff_base, head, "--", "*.docx")
+    try:
+        stdout = run_git("diff", "--name-only", "--diff-filter=AM", diff_base, head, "--", "*.docx")
+    except:
+        stdout = subprocess.run(["find", ".", "-names", "*.docx"], capture_output=True, text=True).stdout
     return [line.strip() for line in stdout.splitlines() if line.strip()]
 
 
