@@ -24,7 +24,7 @@ runs:
       shell: bash
     - run: source venv/bin/activate
       shell: bash            
-    - run: pip install wheel
+    - run: pip install wheel pytest
       shell: bash
     - run: pip install -v -r `find . -name requirements.txt`
       shell: bash
@@ -40,13 +40,7 @@ runs:
         fi
       shell: bash
     - run: |
-        if [[ -d docassemble ]]; then
-          # Run tests in implicit namespace packages
-          python -m unittest discover docassemble
-        else
-          # Run tests in regular packages
-          python -m unittest discover
-        fi
+        pytest
       shell: bash      
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
