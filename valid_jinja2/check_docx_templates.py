@@ -87,7 +87,7 @@ def list_changed_docx(base: str, head: str) -> List[str]:
     try:
         stdout = run_git("diff", "--name-only", "--diff-filter=AM", diff_base, head, "--", "*.docx")
     except:
-        stdout = subprocess.run(["find", ".", "-names", "*.docx"], capture_output=True, text=True).stdout
+        stdout = subprocess.run(["find", ".", "-name", "*.docx"], capture_output=True, text=True).stdout
     return [line.strip() for line in stdout.splitlines() if line.strip()]
 
 
