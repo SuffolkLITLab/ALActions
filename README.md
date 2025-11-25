@@ -161,10 +161,11 @@ jobs:
 
 #### Key Features
 
-- **Syntax Validation**: Ensures all Jinja2 blocks (`{{ }}`, `{% %}`) have correct syntax
-- **Smart Filter Handling**: Recognizes 70+ common Docassemble and Jinja2 filters, treating unknown filters as warnings rather than errors
-- **Comprehensive Reporting**: Generates HTML artifacts and Markdown summaries for easy review
-- **Git Integration**: Automatically detects added and changed DOCX files in commits and pull requests
+- Ensures all Jinja2 blocks (`{{ }}`, `{% %}`) have correct syntax
+- Recognizes 70+ common Docassemble and Jinja2 filters, treating unknown filters as warnings rather than errors
+- Generates HTML artifacts and Markdown summaries for easy review
+- Automatically detects added and changed DOCX files in commits and pull requests
+    - NOTE: it will only use changes commited to git, so be sure to commit your fixed DOCX if testing locally
 
 #### Sample Workflow
 
