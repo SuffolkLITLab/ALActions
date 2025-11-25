@@ -29,5 +29,5 @@ runs:
       shell: bash
 
     - name: Run YAML Checker
-      run: python -m dayamlchecker $(find . -name "*.yml" -path "*/questions/*")
+      run: find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker
       shell: bash
