@@ -250,6 +250,7 @@ def main() -> None:
         try:
             validation_result = validate_bytes(head_bytes)
         except Exception as exc:  # pylint: disable=broad-exception-caught
+            import traceback
             validation_result = ValidationResult()
             validation_result.add_syntax_error(f"Validation crashed: {traceback.format_exc()}")
 

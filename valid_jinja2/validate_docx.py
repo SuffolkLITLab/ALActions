@@ -90,10 +90,28 @@ class CallAndDebugUndefined(DebugUndefined):
     def __getattr__(self, _: str) -> "CallAndDebugUndefined":
         return self
 
+    ## Define `<` and `>` ops, since we compare dates in docxs sometimes
+    def __lt__(self, _):
+        return True
+
+    def __gt__(self, _):
+        return False
+
+    def __format__(self, *y, **kwargs):
+        return str(self)
+
+    ## Things that handle `other_parties`
+    def number(self):
+        return 0
+
+    def as_noun(self, *y):
+        return str(self)
+
+
     __getitem__ = __getattr__  # type: ignore
 
 
-null_func: Callable = lambda *y: y
+null_func: Callable = lambda *args, **kwargs: args[0]
 
 # Jinja filters that docassemble doesn't override, but
 # we don't want to run (we're just checking that they exist)
@@ -345,7 +363,7 @@ def get_jinja_errors_with_warnings(the_file: str) -> ValidationResult:
     raw_filters = extract_filters_from_docx(the_file)
     
     # Keep track of all unknown filters we've found
-    all_unknown_filters = set()
+    all_unknown_filters: Set[str] = set()
     all_syntax_errors = set()  # Track syntax errors to avoid duplicates
     max_iterations = 10  # Prevent infinite loops
     
