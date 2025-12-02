@@ -97,6 +97,12 @@ class CallAndDebugUndefined(DebugUndefined):
     def __gt__(self, _):
         return False
 
+    def __add__(self, _):
+        return self
+
+    def __sub__(self, _):
+        return self
+
     def __format__(self, *y, **kwargs):
         return str(self)
 
@@ -116,7 +122,8 @@ null_func: Callable = lambda *args, **kwargs: args[0]
 # Jinja filters that docassemble doesn't override, but
 # we don't want to run (we're just checking that they exist)
 builtin_jinja_filters = {
-    "round": null_func
+    "round": null_func,
+    "Decimal": null_func
 }
 
 # From parse.py, get_builtin_jinja_filters()
