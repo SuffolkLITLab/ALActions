@@ -1,0 +1,68 @@
+{
+    "type": "AdaptiveCard",
+    "_schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.5",
+    "body": [
+        {
+            "type": "ColumnSet",
+            "columns": [
+                {
+                    "type": "Column",
+                    "width": "auto",
+                    "items": [
+                        {
+                            "type": "Icon",
+                            "name": "GlobeError"
+                        }
+                    ]
+                },
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                        {
+                            "type": "TextBlock",
+                            "text": "Server Incident",
+                            "weight": "Bolder",
+                            "size": "Large"
+                        }
+                    ]
+                }
+            ],
+            "separator": true,
+            "horizontalAlignment": "Left"
+        },
+        {
+            "type": "TextBlock",
+            "text": "${incident_context}",
+            "wrap": true,
+            "id": "main_context"
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.OpenUrl",
+                    "title": "View Logs",
+                    "id": "open-url",
+                    "tooltip": "See incident context",
+                    "style": "positive",
+                    "iconUrl": "icon:BookExclamationMark",
+                    "url": "${logs_url}"
+                },
+                {
+                    "type": "Action.OpenUrl",
+                    "mode": "secondary",
+                    "title": "Visit Server",
+                    "id": "visit-server",
+                    "tooltip": "Open the URL that had a failure in the text",
+                    "style": "positive",
+                    "iconUrl": "icon:GlobeArrowForward",
+                    "url": "${server_url}"
+                }
+            ]
+        }
+    ],
+    "speak": "main_context",
+    "lang": "en"
+}
