@@ -18,6 +18,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for dev"
   apps-test-monitor:
     runs-on: ubuntu-latest
@@ -30,6 +31,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for test"
   apps-prod-monitor:
     runs-on: ubuntu-latest
@@ -42,6 +44,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for Suffolk prod"
   mi-monitor:
     runs-on: ubuntu-latest
@@ -54,6 +57,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for MI prod"
   mi-dev-monitor:
     runs-on: ubuntu-latest
@@ -66,6 +70,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for MI dev"
   mn-prod-monitor:
     runs-on: ubuntu-latest
@@ -78,6 +83,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for MN prod"
   vt-prod-monitor:
     runs-on: ubuntu-latest
@@ -90,6 +96,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for VT prod"
   ak-prod-monitor:
     runs-on: ubuntu-latest
@@ -102,6 +109,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for AK prod"
   ilao-prod-monitor:
     runs-on: ubuntu-latest
@@ -114,6 +122,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for ILAO prod"
   ilao-dev-monitor:
     runs-on: ubuntu-latest
@@ -126,4 +135,5 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for ILAO Dev"

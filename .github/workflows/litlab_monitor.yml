@@ -18,6 +18,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for ratemypdf"
   suffolklitlab-org:
     runs-on: ubuntu-latest
@@ -30,6 +31,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for suffolklitlab"
   spot-suffolk:
     runs-on: ubuntu-latest
@@ -42,6 +44,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for SPOT"
   made-gbls:
     runs-on: ubuntu-latest
@@ -54,6 +57,7 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for MADE"
   courtformsonline:
     runs-on: ubuntu-latest
@@ -66,4 +70,5 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
+          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for Court Forms Online"
