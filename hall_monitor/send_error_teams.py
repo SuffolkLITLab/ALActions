@@ -3,6 +3,7 @@
 import os
 import sys
 import requests
+from pathlib import Path
 from string import Template
 
 def send_error_to_teams(github_server, github_repository, github_run_id, github_workflow, github_job, check_outcome):
@@ -21,7 +22,8 @@ def send_error_to_teams(github_server, github_repository, github_run_id, github_
         """
     run_url = f"{ github_server }/{ github_repository }/actions/runs/{ github_run_id }"
 
-    with open("teams_card.json", "r") as f:
+    p = Path(__file__).with_name("teams_card.json")
+    with p.open("r") as f:
         card_raw = f.read()
         main_url = next(iter(urls), "")
         card = Template(card_raw).substitute(incident_context=content, logs_url=run_url, server_url=main_url)
