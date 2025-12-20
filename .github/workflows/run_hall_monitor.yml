@@ -4,7 +4,7 @@ on:
   schedule:
     # run once every 30 minutes
     # * is a special character in YAML so you have to quote this string
-    - cron:  "0,30 * * * *"
+    - cron:  "0,30 0-5,7-23 * * *"
 
 jobs:
   apps-dev-monitor:
