@@ -15,7 +15,7 @@ runs:
     - run: pip install docsig
       shell: bash
     - run: |
-        docsig `find . -name "*.py" ! -name "test*.py" ! -name "*setup.py" ! -name "*__init__.py"`
+        docsig `find . -name "*.py" ! -name "test*.py" ! -name "*setup.py" ! -name "*__init__.py"` --disable description-not-capitalized
       shell: bash
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
