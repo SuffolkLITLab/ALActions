@@ -113,6 +113,9 @@ class CallAndDebugUndefined(DebugUndefined):
     def as_noun(self, *y):
         return str(self)
 
+    # A specific handle for `name.full`
+    def full(self):
+        return str(self)
 
     __getitem__ = __getattr__  # type: ignore
 
