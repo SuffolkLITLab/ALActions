@@ -20,19 +20,6 @@ jobs:
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
           TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for dev"
-  apps-test-monitor:
-    runs-on: ubuntu-latest
-    name: Check apps-test for misinstalled interviews
-    steps:
-      - uses: SuffolkLITLab/ALActions/hall_monitor@main
-        with:
-          SERVER_URL: "https://apps-test.suffolklitlab.org"
-          CHECK_TYPE: "all"
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
-          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
-          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
-      - run: echo "Finished running monitor for test"
   apps-prod-monitor:
     runs-on: ubuntu-latest
     name: Check apps.suffolk for misinstalled interviews
