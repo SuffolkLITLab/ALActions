@@ -5,6 +5,12 @@ inputs:
   python-version:
     description: Python version to use
     default: "3.12"
+  run-url-check:
+    description: Run URL checker (requires network; set false to skip network calls)
+    default: "true"
+  check-templates:
+    description: Include data/templates in URL scan (in addition to data/questions)
+    default: "true"
 
 runs:
   using: composite
@@ -17,7 +23,7 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Install dependencies
-      run: python -m pip install build dayamlchecker --user
+      run: python -m pip install build dayamlchecker requests linkify-it-py docx2python pypdf --user
       shell: bash
 
     - name: Check syntax for all files
@@ -30,4 +36,14 @@ runs:
 
     - name: Run YAML Checker
       run: find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker
+      shell: bash
+
+    - name: Check URLs in question/template files
+      if: ${{ inputs.run-url-check == 'true' }}
+      run: |
+        args=""
+        if [ "${{ inputs.check-templates }}" = "false" ]; then
+          args="$args --skip-templates"
+        fi
+        python "$GITHUB_ACTION_PATH/check_questions_urls.py" $args
       shell: bash

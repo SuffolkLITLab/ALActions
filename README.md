@@ -305,6 +305,7 @@ jobs:
 - The package can build
 - Python all compiles
 - The interview file is minimally correct (python code blocks compile, mako statements compile, we are using known Docassemble keys in the YAML)
+- Absolute URLs in `docassemble/*/data/questions` do not return HTTP 404 (excluding `example.com` links)
 
 #### Usage
 
