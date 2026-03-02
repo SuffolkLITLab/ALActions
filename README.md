@@ -321,6 +321,10 @@ jobs:
       - uses: SuffolkLITLab/ALActions/da_build@main
         with:
           python-version: "3.12"
+          # Optional: comma/newline-separated URLs to skip in url_check
+          ignore-urls: |
+            https://example.com/known-flaky-endpoint
+            https://another.example.org/blocked-from-ci
 ```
 
 ## Development Details

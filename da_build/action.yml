@@ -11,6 +11,9 @@ inputs:
   check-templates:
     description: Include data/templates in URL scan (in addition to data/questions)
     default: "true"
+  ignore-urls:
+    description: Comma/newline-separated absolute URLs to ignore in URL checks
+    default: ""
 
 runs:
   using: composite
@@ -41,9 +44,12 @@ runs:
     - name: Check URLs in question/template files
       if: ${{ inputs.run-url-check == 'true' }}
       run: |
-        args=""
+        args=()
         if [ "${{ inputs.check-templates }}" = "false" ]; then
-          args="$args --skip-templates"
+          args+=(--skip-templates)
         fi
-        python "$GITHUB_ACTION_PATH/check_questions_urls.py" $args
+        if [ -n "${{ inputs.ignore-urls }}" ]; then
+          args+=(--ignore-urls "${{ inputs.ignore-urls }}")
+        fi
+        python "$GITHUB_ACTION_PATH/check_questions_urls.py" "${args[@]}"
       shell: bash

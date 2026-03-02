@@ -39,6 +39,14 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip scanning data/templates (default: False, scan templates)",
     )
+    parser.add_argument(
+        "--ignore-urls",
+        default="",
+        help=(
+            "Comma/newline-separated absolute URLs to ignore while checking "
+            "(default: none)"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -197,6 +205,25 @@ def parse_url_token(raw_url: str) -> tuple[str | None, bool]:
     return url, False
 
 
+def parse_ignore_urls(raw: str) -> set[str]:
+    """Parse comma/newline separated URLs to ignore."""
+    if not raw:
+        return set()
+
+    tokens = re.split(r"[\n,]", raw)
+    ignored_urls: set[str] = set()
+    for token in tokens:
+        candidate = token.strip()
+        if not candidate:
+            continue
+        url, is_concatenated = parse_url_token(candidate)
+        if is_concatenated:
+            continue
+        if url:
+            ignored_urls.add(url)
+    return ignored_urls
+
+
 def extract_urls_from_file(file_path: pathlib.Path, linkify: LinkifyIt) -> tuple[list[str], list[str]]:
     # Extract text based on file type
     suffix = file_path.suffix.lower()
@@ -278,9 +305,16 @@ def check_urls(
 def main() -> int:
     args = parse_args()
     root = pathlib.Path(args.root).resolve()
+    ignored_urls = parse_ignore_urls(args.ignore_urls)
     
     check_templates = not args.skip_templates
     url_sources, concatenated_sources = collect_urls(root, check_templates=check_templates)
+
+    ignored_matches = sorted(url for url in ignored_urls if url in url_sources)
+    if ignored_matches:
+        for ignored in ignored_matches:
+            del url_sources[ignored]
+        print(f"Ignoring {len(ignored_matches)} URL(s) via --ignore-urls.")
 
     if not url_sources and not concatenated_sources:
         scope = "docassemble/*/data/questions"
