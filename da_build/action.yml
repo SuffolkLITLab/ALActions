@@ -51,5 +51,5 @@ runs:
         if [ -n "${{ inputs.ignore-urls }}" ]; then
           args+=(--ignore-urls "${{ inputs.ignore-urls }}")
         fi
-        python "$GITHUB_ACTION_PATH/check_questions_urls.py" "${args[@]}"
+        python -m dayamlchecker.check_questions_urls "${args[@]}"
       shell: bash
