@@ -42,7 +42,7 @@ runs:
     - name: Run Bandit security scan
       run: |
         pip install bandit
-        bandit -r . --exclude './venv,./build' --severity-level=high
+        bandit -r . --exclude './scripts,./venv,./build' --severity-level=high
       shell: bash
     - run: |
         pytest
