@@ -39,6 +39,11 @@ runs:
           mv docassemble/__init__.py docassemble/__init__.py.bak
         fi
       shell: bash
+    - name: Run Bandit security scan
+      run: |
+        pip install bandit
+        bandit -r . --exclude './scripts,./venv,./build' --severity-level=high
+      shell: bash
     - run: |
         pytest
       shell: bash      
