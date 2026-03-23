@@ -33,7 +33,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Check files using the black formatter
       uses: psf/black@stable
       id: action_black
