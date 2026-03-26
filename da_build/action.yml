@@ -66,8 +66,9 @@ runs:
           exit "$checker_status"
         fi
 
-        # Surface warning lines as GitHub Actions annotations without failing the job.
+        # Surface warning lines as a single GitHub Actions annotation without failing the job.
         in_warning_block=false
+        warning_text=""
         while IFS= read -r line; do
           if [ "$line" = "URL checker warnings:" ]; then
             in_warning_block=true
@@ -80,9 +81,16 @@ runs:
             continue
           fi
 
-          escaped="${line//'%'/'%25'}"
+          if [ -n "$warning_text" ]; then
+            warning_text+=$'\n'
+          fi
+          warning_text+="$line"
+        done < "$output_file"
+
+        if [ -n "$warning_text" ]; then
+          escaped="${warning_text//'%'/'%25'}"
           escaped="${escaped//$'\r'/'%0D'}"
           escaped="${escaped//$'\n'/'%0A'}"
           echo "::warning title=URL checker::$escaped"
-        done < "$output_file"
+        fi
       shell: bash
