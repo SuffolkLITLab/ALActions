@@ -305,6 +305,7 @@ jobs:
 - The package can build
 - Python all compiles
 - The interview file is minimally correct (python code blocks compile, mako statements compile, we are using known Docassemble keys in the YAML)
+- Absolute URLs in `docassemble/*/data/questions` do not return HTTP 404 (excluding `example.com` links)
 
 #### Usage
 
@@ -320,6 +321,12 @@ jobs:
       - uses: SuffolkLITLab/ALActions/da_build@main
         with:
           python-version: "3.12"
+          # Optional: disable URL checks for environments without network access
+          skip-url-check: "true"
+          # Optional: comma/newline-separated URLs to skip in url_check
+          ignore-urls: |
+            https://example.com/known-flaky-endpoint
+            https://another.example.org/blocked-from-ci
 ```
 
 ## Development Details
