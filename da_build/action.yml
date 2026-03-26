@@ -5,9 +5,9 @@ inputs:
   python-version:
     description: Python version to use
     default: "3.12"
-  run-url-check:
-    description: Run URL checker (requires network; set false to skip network calls)
-    default: "true"
+  skip-url-check:
+    description: Skip URL checker network calls
+    default: "false"
   skip-templates:
     description: Skip checking URLs in template files
     default: "false"
@@ -42,8 +42,12 @@ runs:
       shell: bash
 
     - name: Check URLs in question/template files
-      if: ${{ inputs.run-url-check == 'true' }}
       run: |
+        if [ "${{ inputs.skip-url-check }}" = "true" ]; then
+          echo "Skipping URL checks"
+          exit 0
+        fi
+
         args=()
         if [ "${{ inputs.skip-templates }}" = "true" ]; then
           args+=(--skip-templates)
@@ -51,5 +55,34 @@ runs:
         if [ -n "${{ inputs.ignore-urls }}" ]; then
           args+=(--ignore-urls "${{ inputs.ignore-urls }}")
         fi
-        python -m dayamlchecker.check_questions_urls "${args[@]}"
+
+        output_file="$(mktemp)"
+        set +e
+        python -m dayamlchecker.check_questions_urls "${args[@]}" 2>&1 | tee "$output_file"
+        checker_status=${PIPESTATUS[0]}
+        set -e
+
+        if [ "$checker_status" -ne 0 ]; then
+          exit "$checker_status"
+        fi
+
+        # Surface warning lines as GitHub Actions annotations without failing the job.
+        in_warning_block=false
+        while IFS= read -r line; do
+          if [ "$line" = "URL checker warnings:" ]; then
+            in_warning_block=true
+            continue
+          fi
+          if [ "$in_warning_block" != "true" ]; then
+            continue
+          fi
+          if [ -z "$line" ]; then
+            continue
+          fi
+
+          escaped="${line//'%'/'%25'}"
+          escaped="${escaped//$'\r'/'%0D'}"
+          escaped="${escaped//$'\n'/'%0A'}"
+          echo "::warning title=URL checker::$escaped"
+        done < "$output_file"
       shell: bash
