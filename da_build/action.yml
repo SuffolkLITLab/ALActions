@@ -8,9 +8,9 @@ inputs:
   run-url-check:
     description: Run URL checker (requires network; set false to skip network calls)
     default: "true"
-  check-templates:
-    description: Include data/templates in URL scan (in addition to data/questions)
-    default: "true"
+  skip-templates:
+    description: Skip checking URLs in template files
+    default: "false"
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
@@ -45,7 +45,7 @@ runs:
       if: ${{ inputs.run-url-check == 'true' }}
       run: |
         args=()
-        if [ "${{ inputs.check-templates }}" = "false" ]; then
+        if [ "${{ inputs.skip-templates }}" = "true" ]; then
           args+=(--skip-templates)
         fi
         if [ -n "${{ inputs.ignore-urls }}" ]; then
