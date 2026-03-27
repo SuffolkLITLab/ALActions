@@ -35,7 +35,7 @@ runs:
   steps:
     - uses: actions/checkout@v6
     - name: Check files using the black formatter
-      uses: psf/black@stable
+      uses: psf/black@35ea67920b7f6ac8e09be1c47278752b1e827f76
       id: action_black
       with:
         options: "--extend-exclude (__init__.py|setup.py)"
@@ -45,7 +45,7 @@ runs:
       shell: bash
     - name: Create Pull Request
       if: steps.formatted.outputs.formatted_files != '' && inputs.MAKE_PR == 'true'
-      uses: peter-evans/create-pull-request@v3
+      uses: peter-evans/create-pull-request@18f7dc018cc2cd597073088f7c7591b9d1c02672
       with:
         token: ${{ inputs.GITHUB_TOKEN }}
         title: "Format Python code with psf/black push"
