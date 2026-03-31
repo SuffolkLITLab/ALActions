@@ -220,24 +220,6 @@ jobs:
 
 Artifacts should be visible in the Summary of the action results.
 
-### publish
-
-`publish` publishes a python package to pypi, and announces the publishing to a given Teams chat.
-
-#### Usage
-
-```yml
-jobs:
-  my-workflow:
-    ...
-    steps:
-    - uses: SuffolkLITLab/ALActions/publish@main
-      with:
-        PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        VERSION_TO_PUBLISH: ${{ env.GITHUB_REF_NAME }}
-        TEAMS_BUMP_WEBHOOK: ${{ secrets.TEAMS_BUMP_WEBHOOK }}
-```
-
 ### Hall Monitor
 
 `hall_monitor` checks a given docassemble server to make sure that all of the installed interviews can load their first page correctly,
