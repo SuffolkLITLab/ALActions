@@ -11,7 +11,9 @@ inputs:
     default: ""
   GITHUB_TOKEN:
     description: |
-      The GitHub token needed to actually make the PR if formatting is needed.
+      No longer used.
+    deprecationMessage: |
+      This action no longer will make PRs with formatting changes. You should remove this input.
     required: false
     default: ""
 outputs:
