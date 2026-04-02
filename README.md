@@ -37,6 +37,8 @@ jobs:
 
 ### black-formatting
 
+Runs [black](https://black.readthedocs.io/en/stable/), a python formatter, over the python code in your package.
+
 #### Usage  
 
 ```yml
@@ -45,9 +47,6 @@ jobs:
     ...
     steps:
       - uses: SuffolkLITLab/ALActions/black-formatting@main
-        with:
-          MAKE_PR: "true"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 `black` will also read configs from `pyproject.toml`. In most projects, we include the following:

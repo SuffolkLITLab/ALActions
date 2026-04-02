@@ -4,25 +4,16 @@ description: |
 inputs:
   MAKE_PR:
     description: |
-      If "true" and the linter needs to make changes, it'll make a PR to the current PR.\
-      You will to pass a GitHub token through GITHUB_TOKEN to make the PR.
-
-      If this is true, it's suggested that you only run the action on PRS and pushes to main, like this:
-
-      ```
-      on:
-        push:
-          branches:
-            - main
-        pull_request:
-          branches:
-            - main
-      ```
+      No longer used.
+    deprecationMessage: |
+      This action no longer will make PRs with formatting changes. You should remove this input.
     required: false
     default: ""
   GITHUB_TOKEN:
     description: |
-      The GitHub token needed to actually make the PR if formatting is needed.
+      No longer used.
+    deprecationMessage: |
+      This action no longer will make PRs with formatting changes. You should remove this input.
     required: false
     default: ""
 outputs:
@@ -43,18 +34,6 @@ runs:
     - run: echo "formatted_files=$(git diff --name-only)" >> $GITHUB_OUTPUT
       id: formatted
       shell: bash
-    - name: Create Pull Request
-      if: steps.formatted.outputs.formatted_files != '' && inputs.MAKE_PR == 'true'
-      uses: peter-evans/create-pull-request@18f7dc018cc2cd597073088f7c7591b9d1c02672
-      with:
-        token: ${{ inputs.GITHUB_TOKEN }}
-        title: "Format Python code with psf/black push"
-        commit-message: ":art: Format Python code with psf/black"
-        body: |
-          There appear to be some python formatting errors in ${{ github.sha }}. This pull request
-          uses the [psf/black](https://github.com/psf/black) formatter to fix these issues.
-        base: ${{ github.ref_name }} # Creates pull request onto pull request or commit branch
-        branch: actions/black/for_${{ github.ref_name }}
     - if: steps.formatted.outputs.formatted_files != ''
       run: exit 1
       shell: bash
