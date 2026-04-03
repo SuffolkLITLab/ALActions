@@ -18,7 +18,7 @@ runs:
         python-version: '3.12'
         cache: 'pip'
         cache-dependency-path: |
-            setup.py
+            pyproject.toml
             **/requirements.txt
     - run: python -m venv venv
       shell: bash
@@ -26,7 +26,12 @@ runs:
       shell: bash            
     - run: pip install wheel pytest
       shell: bash
-    - run: pip install -v -r `find . -name requirements.txt`
+    - run: |
+          if [ -n "$(find . -name requirements.txt)" ]; then
+            pip install -v -r $(find . -name requirements.txt)
+          else
+            pip install -v --group dev .
+          fi
       shell: bash
     - run: pip install -v --editable . 
       shell: bash  
