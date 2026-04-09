@@ -30,7 +30,7 @@ runs:
       shell: bash
 
     - name: Install dependencies
-      run: uv pip install --system build "dayamlchecker>=1.2.0"
+      run: uv tool install "dayamlchecker>=1.2.0"
       shell: bash
 
     - name: Check syntax for all files
