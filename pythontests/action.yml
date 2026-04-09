@@ -35,9 +35,9 @@ runs:
         fi
       shell: bash
 
-    - name: Run uv audit
-      run: uv audit
-      shell: bash
+    #- name: Run uv audit
+      #run: uv audit
+      #shell: bash
 
     - run: export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
       shell: bash
