@@ -1,5 +1,6 @@
 name: Run python only tests
 description: "Sets up running python tests for Assembly Line projects. Should work with both docassemble and non-docassemble projects"
+
 outputs:
   tests-passed:
     description: "If the tests passed"
@@ -10,48 +11,53 @@ runs:
   steps:
     - run: sudo apt-get update && sudo apt-get -y install libcurl4-openssl-dev build-essential python3-dev libldap2-dev libsasl2-dev slapd ldap-utils tox lcov libzbar0 libaugeas0 augeas-lenses
       shell: bash
+
     - run: echo "ISUNITTEST=true" >> $GITHUB_ENV
       shell: bash
+
     - uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
       with:
         python-version: '3.12'
-        cache: 'pip'
-        cache-dependency-path: |
-            pyproject.toml
-            **/requirements.txt
-    - run: python -m venv venv
+
+    - name: Set uv exclude-newer config
+      run: echo "UV_EXCLUDE_NEWER=7 days" >> $GITHUB_ENV
       shell: bash
-    - run: source venv/bin/activate
-      shell: bash            
-    - run: pip install wheel pytest
+
+    - name: Install dependencies
+      run: |
+        if grep -q "\[dependency-groups\]" pyproject.toml 2>/dev/null; then
+          uv sync --group dev
+        else
+          uv sync
+        fi
       shell: bash
-    - run: |
-          if [ -n "$(find . -name requirements.txt)" ]; then
-            pip install -v -r $(find . -name requirements.txt)
-          else
-            pip install -v --group dev .
-          fi
+
+    - name: Run uv audit
+      run: uv audit
       shell: bash
-    - run: pip install -v --editable . 
-      shell: bash  
+
     - run: export PYTHONPATH=$PYTHONPATH:$GITHUB_WORKSPACE
       shell: bash
-    - run: python -m mypy . --exclude '^build/' --explicit-package-bases
-      shell: bash
+
     - run: |
         if [[ -f docassemble/__init__.py ]]; then
           mv docassemble/__init__.py docassemble/__init__.py.bak
         fi
       shell: bash
-    - name: Run Bandit security scan
-      run: |
-        pip install bandit
-        bandit -r . --exclude './scripts,./venv,./build' --severity-level=high
+
+    - run: uv run mypy . --exclude '^build/' --explicit-package-bases
       shell: bash
-    - run: |
-        pytest
-      shell: bash      
+
+    - name: Run Bandit security scan
+      run: uv run bandit -r . --exclude './scripts,./venv,./build' --severity-level=high
+      shell: bash
+
+    - run: uv run pytest
+      shell: bash
+
     - id: output-step
       run: echo "test-outputs=$?" >> $GITHUB_OUTPUT
       shell: bash

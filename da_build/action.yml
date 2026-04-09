@@ -20,13 +20,17 @@ runs:
   steps:
     - uses: actions/checkout@v6
 
-    - name: Set up Python
-      uses: actions/setup-python@v6
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
       with:
         python-version: ${{ inputs.python-version }}
 
+    - name: Set uv exclude-newer
+      run: echo "UV_EXCLUDE_NEWER=7 days" >> $GITHUB_ENV
+      shell: bash
+
     - name: Install dependencies
-      run: python -m pip install build "dayamlchecker>=1.2.0" --user
+      run: uv pip install --system build "dayamlchecker>=1.2.0"
       shell: bash
 
     - name: Check syntax for all files
@@ -34,7 +38,7 @@ runs:
       shell: bash
 
     - name: Build a binary wheel and a source tarball
-      run: python -m build --sdist --wheel --outdir dist/
+      run: uv build --sdist --wheel --outdir dist/
       shell: bash
 
     - name: Run YAML Checker
@@ -52,6 +56,7 @@ runs:
         if [ "${{ inputs.skip-templates }}" = "true" ]; then
           args+=(--skip-templates)
         fi
+
         if [ -n "${{ inputs.ignore-urls }}" ]; then
           args+=(--ignore-urls "${{ inputs.ignore-urls }}")
         fi
@@ -65,7 +70,7 @@ runs:
         if [ "$checker_status" -ne 0 ]; then
           exit "$checker_status"
         fi
-
+        
         # Surface warning lines as a single GitHub Actions annotation without failing the job.
         in_warning_block=false
         warning_text=""
@@ -80,7 +85,6 @@ runs:
           if [ -z "$line" ]; then
             continue
           fi
-
           if [ -n "$warning_text" ]; then
             warning_text+=$'\n'
           fi
