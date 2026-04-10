@@ -52,7 +52,7 @@ runs:
       shell: bash
 
     - name: Run Bandit security scan
-      run: uv tool run bandit -r . --exclude './scripts,./venv,./build' --severity-level=high
+      run: uv tool run bandit -r . --exclude './scripts,./venv,./.venv,./build' --severity-level=high
       shell: bash
 
     - run: uv run pytest
