@@ -30,9 +30,7 @@ runs:
       shell: bash
 
     - name: Install dependencies
-      run: |
-          uv tool install "dayamlchecker>=1.2.0"
-          source $(uv tool dir)/dayamlchecker/bin/activate # necessary because dayamlchecker.check_questions_urls isn't a binary.
+      run: uv tool install "dayamlchecker>=1.2.0"
       shell: bash
 
     - name: Check syntax for all files
@@ -44,11 +42,16 @@ runs:
       shell: bash
 
     - name: Run YAML Checker
-      run: find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker
+      run: |
+        # necessary because dayamlchecker.check_questions_urls isn't a binary.
+        source $(uv tool dir)/dayamlchecker/bin/activate
+        find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker
       shell: bash
 
     - name: Check URLs in question/template files
       run: |
+        # necessary because dayamlchecker.check_questions_urls isn't a binary.
+        source $(uv tool dir)/dayamlchecker/bin/activate
         if [ "${{ inputs.skip-url-check }}" = "true" ]; then
           echo "Skipping URL checks"
           exit 0
