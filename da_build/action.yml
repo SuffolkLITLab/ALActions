@@ -38,7 +38,7 @@ runs:
       shell: bash
 
     - name: Build a binary wheel and a source tarball
-      run: uv build --sdist --wheel --outdir dist/
+      run: uv build --sdist --wheel --out-dir dist/
       shell: bash
 
     - name: Run YAML Checker
