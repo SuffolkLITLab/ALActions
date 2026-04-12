@@ -32,7 +32,7 @@ runs:
     - name: Install dependencies
       run: |
           uv tool install "dayamlchecker>=1.2.0"
-          source $(uv tool dir)/bin/activate # necessary because dayamlchecker.check_questions_urls isn't a binary.
+          source $(uv tool dir)/dayamlchecker/bin/activate # necessary because dayamlchecker.check_questions_urls isn't a binary.
       shell: bash
 
     - name: Check syntax for all files
