@@ -14,6 +14,9 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
+  skip-pdf-check:
+    description: Skip PDF accessibility checking and veraPDF installation
+    default: "false"
   verapdf-validation-mode:
     description: >-
       How to report PDF/UA-1 accessibility failures found by veraPDF.
@@ -110,6 +113,11 @@ runs:
 
     - name: Install veraPDF
       run: |
+        if [ "${{ inputs.skip-pdf-check }}" = "true" ]; then
+          echo "Skipping veraPDF installation"
+          exit 0
+        fi
+
         # veraPDF 1.28+ is required for compatibility with Java 21 (GitHub Actions default).
         VERAPDF_VERSION="1.28.1"
         VERAPDF_MINOR="1.28"
@@ -153,7 +161,12 @@ runs:
       shell: bash
 
     - name: Check PDF accessibility with veraPDF
-      run: python "${{ github.action_path }}/check_pdf_accessibility.py"
+      run: |
+        if [ "${{ inputs.skip-pdf-check }}" = "true" ]; then
+          echo "Skipping PDF accessibility check"
+          exit 0
+        fi
+        python "${{ github.action_path }}/check_pdf_accessibility.py"
       env:
         PDF_ACCESSIBILITY_MODE: ${{ inputs.verapdf-validation-mode }}
         PDF_ACCESSIBILITY_STRICT: ${{ inputs.verapdf-strict }}

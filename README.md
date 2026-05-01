@@ -328,6 +328,8 @@ jobs:
           ignore-urls: |
             https://example.com/known-flaky-endpoint
             https://another.example.org/blocked-from-ci
+          # Optional: skip PDF accessibility check entirely
+          skip-pdf-check: "true"
           # Optional: fail the build instead of just warning on inaccessible PDFs
           verapdf-validation-mode: "error"
           # Optional: enforce form-field annotation structure rules (strict mode)
@@ -342,6 +344,7 @@ jobs:
 | `skip-url-check` | Skip URL checker network calls | `"false"` |
 | `skip-templates` | Skip checking URLs in template files | `"false"` |
 | `ignore-urls` | Comma/newline-separated absolute URLs to ignore in URL checks | `""` |
+| `skip-pdf-check` | Skip PDF accessibility checking and veraPDF installation | `"false"` |
 | `verapdf-validation-mode` | How to report PDF/UA-1 accessibility failures: `"warning"` annotates without failing; `"error"` fails the build | `"warning"` |
 | `verapdf-strict` | Enable strict checking: `"true"` activates tab-order and form-annotation structure rules (suppressed by default because forms are often flattened before users see them) | `"false"` |
 
@@ -351,7 +354,7 @@ veraPDF is installed automatically and used to validate every PDF in the reposit
 PDFs found under `docassemble/*/data/templates/` are checked first, followed by any other PDFs in the repository.
 
 Results are written to the **job summary** with per-PDF rule tables and a **warning annotation** is emitted in the action log.
-Set `verapdf-validation-mode: "error"` to turn failures into build failures.
+Set `verapdf-validation-mode: "error"` to turn failures into build failures, or `skip-pdf-check: "true"` to disable the check entirely.
 
 Rules are classified into four severity levels:
 
