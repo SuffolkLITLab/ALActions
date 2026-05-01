@@ -14,6 +14,19 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
+  verapdf-validation-mode:
+    description: >-
+      How to report PDF/UA-1 accessibility failures found by veraPDF.
+      'warning' annotates the job without failing it (default).
+      'error' fails the build.
+    default: "warning"
+  verapdf-strict:
+    description: >-
+      Enable strict PDF/UA-1 checking.
+      When 'false' (default), tab-order and annotation structure rules for form
+      fields are suppressed because forms are often flattened before users see
+      them. Set to 'true' to treat those rules as failures.
+    default: "false"
 
 runs:
   using: composite
@@ -93,4 +106,55 @@ runs:
           escaped="${escaped//$'\n'/'%0A'}"
           echo "::warning title=URL checker::$escaped"
         fi
+      shell: bash
+
+    - name: Install veraPDF
+      run: |
+        # veraPDF 1.28+ is required for compatibility with Java 21 (GitHub Actions default).
+        VERAPDF_VERSION="1.28.1"
+        VERAPDF_MINOR="1.28"
+        INSTALL_DIR="${RUNNER_TEMP}/verapdf"
+
+        if command -v verapdf &>/dev/null; then
+          echo "veraPDF already available: $(verapdf --version 2>&1 | head -1)"
+          exit 0
+        fi
+
+        echo "Downloading veraPDF ${VERAPDF_VERSION}..."
+        wget -q \
+          "https://software.verapdf.org/releases/${VERAPDF_MINOR}/verapdf-greenfield-${VERAPDF_VERSION}-installer.zip" \
+          -O "${RUNNER_TEMP}/verapdf-installer.zip"
+
+        unzip -q "${RUNNER_TEMP}/verapdf-installer.zip" -d "${RUNNER_TEMP}/verapdf-installer-src"
+
+        cat > "${RUNNER_TEMP}/verapdf-autoinstall.xml" << EOF
+        <AutomatedInstallation langpack="eng">
+          <com.izforge.izpack.panels.htmlhello.HTMLHelloPanel id="welcome"/>
+          <com.izforge.izpack.panels.target.TargetPanel id="install_dir">
+            <installpath>${INSTALL_DIR}</installpath>
+          </com.izforge.izpack.panels.target.TargetPanel>
+          <com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select">
+            <pack name="veraPDF GUI" selected="true"/>
+            <pack name="veraPDF Mac and *nix Scripts" selected="true"/>
+            <pack name="veraPDF Batch files" selected="false"/>
+            <pack name="veraPDF Validation model" selected="true"/>
+            <pack name="veraPDF Documentation" selected="false"/>
+            <pack name="veraPDF Sample Plugins" selected="false"/>
+          </com.izforge.izpack.panels.packs.PacksPanel>
+          <com.izforge.izpack.panels.install.InstallPanel id="install"/>
+          <com.izforge.izpack.panels.finish.FinishPanel id="finish"/>
+        </AutomatedInstallation>
+        EOF
+
+        INSTALLER_JAR=$(find "${RUNNER_TEMP}/verapdf-installer-src" -name "*.jar" | head -1)
+        java -jar "${INSTALLER_JAR}" "${RUNNER_TEMP}/verapdf-autoinstall.xml"
+        echo "${INSTALL_DIR}" >> "${GITHUB_PATH}"
+        echo "Installed veraPDF: $("${INSTALL_DIR}/verapdf" --version 2>&1 | head -1)"
+      shell: bash
+
+    - name: Check PDF accessibility with veraPDF
+      run: python "${{ github.action_path }}/check_pdf_accessibility.py"
+      env:
+        PDF_ACCESSIBILITY_MODE: ${{ inputs.verapdf-validation-mode }}
+        PDF_ACCESSIBILITY_STRICT: ${{ inputs.verapdf-strict }}
       shell: bash

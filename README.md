@@ -306,6 +306,7 @@ jobs:
 - Python all compiles
 - The interview file is minimally correct (python code blocks compile, mako statements compile, we are using known Docassemble keys in the YAML)
 - Absolute URLs in `docassemble/*/data/questions` do not return HTTP 404 (excluding `example.com` links)
+- PDFs in the repository (especially `docassemble/*/data/templates`) are checked for PDF/UA-1 accessibility compliance using [veraPDF](https://verapdf.org/)
 
 #### Usage
 
@@ -327,7 +328,42 @@ jobs:
           ignore-urls: |
             https://example.com/known-flaky-endpoint
             https://another.example.org/blocked-from-ci
+          # Optional: fail the build instead of just warning on inaccessible PDFs
+          verapdf-validation-mode: "error"
+          # Optional: enforce form-field annotation structure rules (strict mode)
+          verapdf-strict: "true"
 ```
+
+#### Input Parameters
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `python-version` | Python version to use | `"3.12"` |
+| `skip-url-check` | Skip URL checker network calls | `"false"` |
+| `skip-templates` | Skip checking URLs in template files | `"false"` |
+| `ignore-urls` | Comma/newline-separated absolute URLs to ignore in URL checks | `""` |
+| `verapdf-validation-mode` | How to report PDF/UA-1 accessibility failures: `"warning"` annotates without failing; `"error"` fails the build | `"warning"` |
+| `verapdf-strict` | Enable strict checking: `"true"` activates tab-order and form-annotation structure rules (suppressed by default because forms are often flattened before users see them) | `"false"` |
+
+#### PDF Accessibility Checking
+
+veraPDF is installed automatically and used to validate every PDF in the repository against the **PDF/UA-1** (ISO 14289-1) accessibility standard.
+PDFs found under `docassemble/*/data/templates/` are checked first, followed by any other PDFs in the repository.
+
+Results are written to the **job summary** with per-PDF rule tables and a **warning annotation** is emitted in the action log.
+Set `verapdf-validation-mode: "error"` to turn failures into build failures.
+
+Rules are classified into four severity levels:
+
+| Severity | Behaviour | Examples |
+|----------|-----------|---------|
+| **Fail** | Emits warning/error annotation; fails build in `error` mode | Missing structure tree, untagged content, figures without alt text, font missing ToUnicode |
+| **Warning** | Always emits a warning annotation; never fails the build | Missing `dc:title`, missing language, missing `DisplayDocTitle`, advisory table/list structure |
+| **Info** | Logged to console only; no annotation | Missing PDF/UA XMP identifier (`§5`), optional content config |
+| **Suppressed** *(non-strict)* | Logged as suppressed; no annotation | Tab order (`§7.18.3`), widget annotation in Form tag (`§7.18.4`) |
+
+In **non-strict mode** (default), tab-order and form-annotation structure rules are suppressed because many tools flatten form fields before the user sees the final PDF.
+Set `verapdf-strict: "true"` to treat these as failures.
 
 ## Development Details
 
