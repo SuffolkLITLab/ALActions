@@ -42,42 +42,50 @@ runs:
       shell: bash
 
     - name: Run YAML Checker
+      env:
+        SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
+        SKIP_TEMPLATES: ${{ inputs.skip-templates }}
+        IGNORE_URLS: ${{ inputs.ignore-urls }}
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
         source $(uv tool dir)/dayamlchecker/bin/activate
 
         args=()
-        if [ "${{ inputs.skip-url-check }}" = "true" ]; then
+        if [ "$SKIP_URL_CHECK" = "true" ]; then
           args+=(--no-url-check)
         fi
 
-        if [ "${{ inputs.skip-templates }}" = "true" ]; then
+        if [ "$SKIP_TEMPLATES" = "true" ]; then
           args+=(--url-check-skip-templates)
         fi
 
-        if [ -n "${{ inputs.ignore-urls }}" ]; then
-          args+=(--url-check-ignore-urls "${{ inputs.ignore-urls }}")
+        if [ -n "$IGNORE_URLS" ]; then
+          args+=(--url-check-ignore-urls "$IGNORE_URLS")
         fi
 
         find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
       shell: bash
 
     - name: Check URLs in question/template files
+      env:
+        SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
+        SKIP_TEMPLATES: ${{ inputs.skip-templates }}
+        IGNORE_URLS: ${{ inputs.ignore-urls }}
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
         source $(uv tool dir)/dayamlchecker/bin/activate
-        if [ "${{ inputs.skip-url-check }}" = "true" ]; then
+        if [ "$SKIP_URL_CHECK" = "true" ]; then
           echo "Skipping URL checks"
           exit 0
         fi
 
         args=()
-        if [ "${{ inputs.skip-templates }}" = "true" ]; then
+        if [ "$SKIP_TEMPLATES" = "true" ]; then
           args+=(--skip-templates)
         fi
 
-        if [ -n "${{ inputs.ignore-urls }}" ]; then
-          args+=(--ignore-urls "${{ inputs.ignore-urls }}")
+        if [ -n "$IGNORE_URLS" ]; then
+          args+=(--ignore-urls "$IGNORE_URLS")
         fi
 
         output_file="$(mktemp)"
