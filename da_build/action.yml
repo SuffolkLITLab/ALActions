@@ -45,7 +45,21 @@ runs:
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
         source $(uv tool dir)/dayamlchecker/bin/activate
-        find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker
+
+        args=()
+        if [ "${{ inputs.skip-url-check }}" = "true" ]; then
+          args+=(--no-url-check)
+        fi
+
+        if [ "${{ inputs.skip-templates }}" = "true" ]; then
+          args+=(--url-check-skip-templates)
+        fi
+
+        if [ -n "${{ inputs.ignore-urls }}" ]; then
+          args+=(--url-check-ignore-urls "${{ inputs.ignore-urls }}")
+        fi
+
+        find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
       shell: bash
 
     - name: Check URLs in question/template files
