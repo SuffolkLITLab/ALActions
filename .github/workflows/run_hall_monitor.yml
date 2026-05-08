@@ -92,7 +92,7 @@ jobs:
       - uses: SuffolkLITLab/ALActions/hall_monitor@main
         with:
           SERVER_URL: "https://courtguide.akcourts.gov"
-          CHECK_TYPE: "homepage"
+          CHECK_TYPE: "all"
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
