@@ -14,6 +14,45 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
+  max-warnings:
+    description: Maximum number of warnings allowed before failing with a non-zero exit code
+    default: ""
+  check-all:
+    description: Do not ignore default directories during recursive search
+    default: "false"
+  no-wcag:
+    description: Disable WCAG-style accessibility lint checks
+    default: "false"
+  accessibility-error-on-widget:
+    description: Treat specific accessibility-sensitive widgets as errors (comma-separated list)
+    default: ""
+  style:
+    description: Enable Assembly Line style lint checks
+    default: "false"
+  style-llm:
+    description: Enable LLM-backed style findings
+    default: "false"
+  openai-base-url:
+    description: Base URL for an OpenAI-compatible API used by style-llm
+    default: ""
+  openai-api-key:
+    description: API key for style-llm
+    default: ""
+  openai-model:
+    description: Model name for style-llm
+    default: ""
+  url-check-root:
+    description: Repository root for related template URL scanning
+    default: ""
+  url-check-timeout:
+    description: HTTP timeout in seconds for each URL check
+    default: ""
+  template-url-severity:
+    description: How to report broken or malformed URLs in template files (error, warning, ignore)
+    default: ""
+  unreachable-url-severity:
+    description: How to report URLs that could not be reached at all (error, warning, ignore)
+    default: ""
 
 runs:
   using: composite
@@ -46,82 +85,51 @@ runs:
         SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
         SKIP_TEMPLATES: ${{ inputs.skip-templates }}
         IGNORE_URLS: ${{ inputs.ignore-urls }}
+        MAX_WARNINGS: ${{ inputs.max-warnings }}
+        CHECK_ALL: ${{ inputs.check-all }}
+        NO_WCAG: ${{ inputs.no-wcag }}
+        ACCESSIBILITY_WIDGETS: ${{ inputs.accessibility-error-on-widget }}
+        STYLE: ${{ inputs.style }}
+        STYLE_LLM: ${{ inputs.style-llm }}
+        OPENAI_BASE_URL: ${{ inputs.openai-base-url }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        OPENAI_MODEL: ${{ inputs.openai-model }}
+        URL_CHECK_ROOT: ${{ inputs.url-check-root }}
+        URL_CHECK_TIMEOUT: ${{ inputs.url-check-timeout }}
+        TEMPLATE_URL_SEVERITY: ${{ inputs.template-url-severity }}
+        UNREACHABLE_URL_SEVERITY: ${{ inputs.unreachable-url-severity }}
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
         source $(uv tool dir)/dayamlchecker/bin/activate
 
         args=()
-        if [ "$SKIP_URL_CHECK" = "true" ]; then
-          args+=(--no-url-check)
+        args+=(--format github)
+        
+        if [ "$SKIP_URL_CHECK" = "true" ]; then args+=(--no-url-check); fi
+        if [ "$SKIP_TEMPLATES" = "true" ]; then args+=(--url-check-skip-templates); fi
+        if [ -n "$IGNORE_URLS" ]; then args+=(--url-check-ignore-urls "$IGNORE_URLS"); fi
+        if [ -n "$MAX_WARNINGS" ]; then args+=(--max-warnings "$MAX_WARNINGS"); fi
+        if [ "$CHECK_ALL" = "true" ]; then args+=(--check-all); fi
+        if [ "$NO_WCAG" = "true" ]; then args+=(--no-wcag); fi
+        if [ -n "$ACCESSIBILITY_WIDGETS" ]; then
+          IFS=',' read -ra WIDGETS <<< "$ACCESSIBILITY_WIDGETS"
+          for w in "${WIDGETS[@]}"; do
+            w=$(echo "$w" | xargs)
+            if [ -n "$w" ]; then
+              args+=(--accessibility-error-on-widget "$w")
+            fi
+          done
         fi
-
-        if [ "$SKIP_TEMPLATES" = "true" ]; then
-          args+=(--url-check-skip-templates)
-        fi
-
-        if [ -n "$IGNORE_URLS" ]; then
-          args+=(--url-check-ignore-urls "$IGNORE_URLS")
-        fi
+        if [ "$STYLE" = "true" ]; then args+=(--style); fi
+        if [ "$STYLE_LLM" = "true" ]; then args+=(--style-llm); fi
+        if [ -n "$OPENAI_BASE_URL" ]; then args+=(--openai-base-url "$OPENAI_BASE_URL"); fi
+        if [ -n "$OPENAI_API_KEY" ]; then args+=(--openai-api-key "$OPENAI_API_KEY"); fi
+        if [ -n "$OPENAI_MODEL" ]; then args+=(--openai-model "$OPENAI_MODEL"); fi
+        if [ -n "$URL_CHECK_ROOT" ]; then args+=(--url-check-root "$URL_CHECK_ROOT"); fi
+        if [ -n "$URL_CHECK_TIMEOUT" ]; then args+=(--url-check-timeout "$URL_CHECK_TIMEOUT"); fi
+        if [ -n "$TEMPLATE_URL_SEVERITY" ]; then args+=(--template-url-severity "$TEMPLATE_URL_SEVERITY"); fi
+        if [ -n "$UNREACHABLE_URL_SEVERITY" ]; then args+=(--unreachable-url-severity "$UNREACHABLE_URL_SEVERITY"); fi
 
         find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
       shell: bash
 
-    - name: Check URLs in question/template files
-      env:
-        SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
-        SKIP_TEMPLATES: ${{ inputs.skip-templates }}
-        IGNORE_URLS: ${{ inputs.ignore-urls }}
-      run: |
-        # necessary because dayamlchecker.check_questions_urls isn't a binary.
-        source $(uv tool dir)/dayamlchecker/bin/activate
-        if [ "$SKIP_URL_CHECK" = "true" ]; then
-          echo "Skipping URL checks"
-          exit 0
-        fi
-
-        args=()
-        if [ "$SKIP_TEMPLATES" = "true" ]; then
-          args+=(--skip-templates)
-        fi
-
-        if [ -n "$IGNORE_URLS" ]; then
-          args+=(--ignore-urls "$IGNORE_URLS")
-        fi
-
-        output_file="$(mktemp)"
-        set +e
-        python -m dayamlchecker.check_questions_urls "${args[@]}" 2>&1 | tee "$output_file"
-        checker_status=${PIPESTATUS[0]}
-        set -e
-
-        if [ "$checker_status" -ne 0 ]; then
-          exit "$checker_status"
-        fi
-        
-        # Surface warning lines as a single GitHub Actions annotation without failing the job.
-        in_warning_block=false
-        warning_text=""
-        while IFS= read -r line; do
-          if [ "$line" = "URL checker warnings:" ]; then
-            in_warning_block=true
-            continue
-          fi
-          if [ "$in_warning_block" != "true" ]; then
-            continue
-          fi
-          if [ -z "$line" ]; then
-            continue
-          fi
-          if [ -n "$warning_text" ]; then
-            warning_text+=$'\n'
-          fi
-          warning_text+="$line"
-        done < "$output_file"
-
-        if [ -n "$warning_text" ]; then
-          escaped="${warning_text//'%'/'%25'}"
-          escaped="${escaped//$'\r'/'%0D'}"
-          escaped="${escaped//$'\n'/'%0A'}"
-          echo "::warning title=URL checker::$escaped"
-        fi
-      shell: bash
