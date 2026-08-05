@@ -20,19 +20,6 @@ jobs:
           ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
           TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
       - run: echo "Finished running monitor for ratemypdf"
-  suffolklitlab-org:
-    runs-on: ubuntu-latest
-    name: Check that suffolklitlab.org is up 
-    steps:
-      - uses: SuffolkLITLab/ALActions/hall_monitor@main
-        with:
-          SERVER_URL: "https://suffolklitlab.org"
-          CHECK_TYPE: "homepage"
-          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-          ERROR_EMAILS: ${{ secrets.ERROR_NOTIFY_EMAILS }} 
-          ERROR_EMAIL_FROM: no-reply@suffolklitlab.org
-          TEAMS_MONITOR_WEBHOOK: ${{ secrets.TEAMS_MONITOR_WEBHOOK }}
-      - run: echo "Finished running monitor for suffolklitlab"
   spot-suffolk:
     runs-on: ubuntu-latest
     name: Check that spot.suffolklitlab.org is up
