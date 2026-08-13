@@ -26,6 +26,18 @@ runs:
       run: echo "UV_EXCLUDE_NEWER=7 days" >> $GITHUB_ENV
       shell: bash
 
+    - name: Keep the virtualenv outside the checkout
+      # Some packages ship import-time checks meant to guard against CWD-based
+      # module hijacking (CWE-427) that treat any import resolved from inside
+      # the current working directory as suspicious. When `.venv` lives inside
+      # the checkout (uv's default), that misfires against the project's own
+      # legitimately installed packages. nltk 3.10.1 did exactly this and broke
+      # every downstream repo's test collection until it was pinned around.
+      # Keeping the environment outside $GITHUB_WORKSPACE avoids the whole
+      # class of false positive.
+      run: echo "UV_PROJECT_ENVIRONMENT=$RUNNER_TEMP/venv" >> $GITHUB_ENV
+      shell: bash
+
     - name: Install dependencies
       run: |
         if grep -q "\[dependency-groups\]" pyproject.toml 2>/dev/null; then
