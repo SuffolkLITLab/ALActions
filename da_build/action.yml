@@ -86,12 +86,17 @@ runs:
         # Match specific files rather than whole directories: not every YAML
         # file is a docassemble interview (workflows, ALKiln fixtures), and
         # only documents under the package's own data/templates are the ones
-        # users receive. The docx path is anchored at the repo root so a local
-        # .venv full of other packages' templates is never picked up.
-        find . \( \
-          \( -name "*.yml" -path "*/questions/*" \) -o \
-          \( -name "*.docx" -path "./docassemble/*/data/templates/*" \
-             -not -name '~$*' \) \
+        # users receive. Both patterns are anchored at the repo root, and
+        # build/ and dist/ are pruned, because the `uv build` step above has
+        # already copied the package into build/lib -- without this every
+        # finding is reported twice and the annotations point at the copy
+        # instead of the file the author edits.
+        find . \
+          \( -path ./build -o -path ./dist -o -path ./.venv \) -prune -o \
+          \( \
+            \( -name "*.yml" -path "./docassemble/*/questions/*" \) -o \
+            \( -name "*.docx" -path "./docassemble/*/data/templates/*" \
+               -not -name '~$*' \) \
           \) -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
       shell: bash
 
