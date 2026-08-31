@@ -159,19 +159,18 @@ def classify_rule(clause: str, test_number: str, strict: bool) -> str:
 
 
 def find_pdfs(root_dir: Path) -> list[Path]:
-    """Find all PDFs, prioritizing docassemble/*/data/templates/ directories."""
+    """Find the PDF templates users actually receive.
+
+    Only docassemble/*/data/templates/, the standard Assembly Line template
+    location. Scanning the whole repository sweeps in PDFs that are not
+    output documents -- reference material, court forms kept for comparison,
+    documentation attachments -- and reporting those as accessibility
+    failures is a false positive the author cannot act on.
+    """
     seen: set[Path] = set()
     pdfs: list[Path] = []
 
-    # Priority: docassemble/*/data/templates/ (standard Assembly Line template location)
     for pdf in sorted(root_dir.glob("docassemble/*/data/templates/**/*.pdf")):
-        key = pdf.resolve()
-        if key not in seen:
-            seen.add(key)
-            pdfs.append(pdf)
-
-    # All other PDFs in the repository
-    for pdf in sorted(root_dir.rglob("*.pdf")):
         key = pdf.resolve()
         if key not in seen:
             seen.add(key)
@@ -266,7 +265,7 @@ def write_summary(results: list[dict], strict: bool) -> None:
     lines = ["## PDF Accessibility Check (PDF/UA-1)", ""]
 
     if total == 0:
-        lines.append("_No PDFs found in repository._")
+        lines.append("_No PDF templates found under `docassemble/*/data/templates`._")
         with open(summary_path, "a", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
         return
@@ -458,7 +457,8 @@ def main() -> int:
 
     pdfs = find_pdfs(root_dir)
     if not pdfs:
-        print("No PDFs found in repository. Skipping accessibility check.", flush=True)
+        print("No PDF templates found under docassemble/*/data/templates. "
+            "Skipping accessibility check.", flush=True)
         write_summary([], strict)
         return 0
 
