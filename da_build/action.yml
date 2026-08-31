@@ -14,14 +14,13 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
-  skip-docx-check:
-    description: Skip DOCX template accessibility checking
-    default: "false"
   docx-validation-mode:
     description: >-
-      How to report accessibility problems in DOCX templates.
+      How to report accessibility problems in DOCX templates under
+      docassemble/*/data/templates.
       'warning' annotates the job without failing it (default).
       'error' fails the build when a template has accessibility errors.
+      'off' skips the check entirely.
     default: "warning"
 
 runs:
@@ -55,7 +54,6 @@ runs:
         SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
         SKIP_TEMPLATES: ${{ inputs.skip-templates }}
         IGNORE_URLS: ${{ inputs.ignore-urls }}
-        SKIP_DOCX_CHECK: ${{ inputs.skip-docx-check }}
         DOCX_VALIDATION_MODE: ${{ inputs.docx-validation-mode }}
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
@@ -74,7 +72,7 @@ runs:
           args+=(--url-check-ignore-urls "$IGNORE_URLS")
         fi
 
-        if [ "$SKIP_DOCX_CHECK" = "true" ]; then
+        if [ "$DOCX_VALIDATION_MODE" = "off" ]; then
           args+=(--no-docx-accessibility)
         else
           # Default is "warning", which reports every finding without failing
@@ -82,12 +80,18 @@ runs:
           args+=(--docx-accessibility-severity "$DOCX_VALIDATION_MODE")
         fi
 
+        # Annotate the PR rather than only writing to the log.
+        args+=(--format github)
+
         # Match specific files rather than whole directories: not every YAML
         # file is a docassemble interview (workflows, ALKiln fixtures), and
-        # only documents under data/templates are the ones users receive.
+        # only documents under the package's own data/templates are the ones
+        # users receive. The docx path is anchored at the repo root so a local
+        # .venv full of other packages' templates is never picked up.
         find . \( \
           \( -name "*.yml" -path "*/questions/*" \) -o \
-          \( -name "*.docx" -path "*/data/templates/*" -not -name '~$*' \) \
+          \( -name "*.docx" -path "./docassemble/*/data/templates/*" \
+             -not -name '~$*' \) \
           \) -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
       shell: bash
 
