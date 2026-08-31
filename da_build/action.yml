@@ -14,6 +14,15 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
+  skip-docx-check:
+    description: Skip DOCX template accessibility checking
+    default: "false"
+  docx-validation-mode:
+    description: >-
+      How to report accessibility problems in DOCX templates.
+      'warning' annotates the job without failing it (default).
+      'error' fails the build when a template has accessibility errors.
+    default: "warning"
 
 runs:
   using: composite
@@ -30,7 +39,7 @@ runs:
       shell: bash
 
     - name: Install dependencies
-      run: uv tool install "dayamlchecker>=1.4.0" --exclude-newer-package "dayamlchecker=0 days"
+      run: uv tool install "dayamlchecker>=1.5.0" --exclude-newer-package "dayamlchecker=0 days"
       shell: bash
 
     - name: Check syntax for all files
@@ -41,11 +50,13 @@ runs:
       run: uv build --sdist --wheel --out-dir dist/
       shell: bash
 
-    - name: Run YAML Checker
+    - name: Run YAML and template document checker
       env:
         SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
         SKIP_TEMPLATES: ${{ inputs.skip-templates }}
         IGNORE_URLS: ${{ inputs.ignore-urls }}
+        SKIP_DOCX_CHECK: ${{ inputs.skip-docx-check }}
+        DOCX_VALIDATION_MODE: ${{ inputs.docx-validation-mode }}
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
         source $(uv tool dir)/dayamlchecker/bin/activate
@@ -63,7 +74,21 @@ runs:
           args+=(--url-check-ignore-urls "$IGNORE_URLS")
         fi
 
-        find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
+        if [ "$SKIP_DOCX_CHECK" = "true" ]; then
+          args+=(--no-docx-accessibility)
+        else
+          # Default is "warning", which reports every finding without failing
+          # the build so authors can work through them over time.
+          args+=(--docx-accessibility-severity "$DOCX_VALIDATION_MODE")
+        fi
+
+        # Match specific files rather than whole directories: not every YAML
+        # file is a docassemble interview (workflows, ALKiln fixtures), and
+        # only documents under data/templates are the ones users receive.
+        find . \( \
+          \( -name "*.yml" -path "*/questions/*" \) -o \
+          \( -name "*.docx" -path "*/data/templates/*" -not -name '~$*' \) \
+          \) -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
       shell: bash
 
     - name: Check URLs in question/template files
