@@ -14,16 +14,15 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
-  skip-pdf-check:
-    description: Skip PDF accessibility checking and veraPDF installation
-    default: "false"
-  verapdf-validation-mode:
+  pdf-validation-mode:
     description: >-
-      How to report PDF/UA-1 accessibility failures found by veraPDF.
+      How to report PDF/UA-1 accessibility failures, found by veraPDF, in PDF
+      templates under docassemble/*/data/templates.
       'warning' annotates the job without failing it (default).
-      'error' fails the build.
+      'error' fails the build when a template has accessibility failures.
+      'off' skips the check and the veraPDF install entirely.
     default: "warning"
-  verapdf-strict:
+  pdf-strict:
     description: >-
       Enable strict PDF/UA-1 checking.
       When 'false' (default), tab-order and annotation structure rules for form
@@ -112,9 +111,11 @@ runs:
       shell: bash
 
     - name: Install veraPDF
+      env:
+        PDF_VALIDATION_MODE: ${{ inputs.pdf-validation-mode }}
       run: |
-        if [ "${{ inputs.skip-pdf-check }}" = "true" ]; then
-          echo "Skipping veraPDF installation"
+        if [ "$PDF_VALIDATION_MODE" = "off" ]; then
+          echo "PDF accessibility checking is off; skipping veraPDF installation"
           exit 0
         fi
 
@@ -162,12 +163,13 @@ runs:
 
     - name: Check PDF accessibility with veraPDF
       run: |
-        if [ "${{ inputs.skip-pdf-check }}" = "true" ]; then
-          echo "Skipping PDF accessibility check"
+        if [ "$PDF_VALIDATION_MODE" = "off" ]; then
+          echo "PDF accessibility checking is off"
           exit 0
         fi
         python "${{ github.action_path }}/check_pdf_accessibility.py"
       env:
-        PDF_ACCESSIBILITY_MODE: ${{ inputs.verapdf-validation-mode }}
-        PDF_ACCESSIBILITY_STRICT: ${{ inputs.verapdf-strict }}
+        PDF_VALIDATION_MODE: ${{ inputs.pdf-validation-mode }}
+        PDF_ACCESSIBILITY_MODE: ${{ inputs.pdf-validation-mode }}
+        PDF_ACCESSIBILITY_STRICT: ${{ inputs.pdf-strict }}
       shell: bash
