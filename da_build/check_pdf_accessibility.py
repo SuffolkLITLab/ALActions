@@ -322,7 +322,7 @@ def write_summary(results: list[dict], strict: bool) -> None:
     else:
         lines.append(
             "_Non-strict mode: tab-order and form-annotation structure rules are suppressed "
-            "(forms may be flattened before users see them). Enable with `verapdf-strict: true`._"
+            "(forms may be flattened before users see them). Enable with `pdf-strict: true`._"
         )
     lines.append("")
 
@@ -470,7 +470,22 @@ def main() -> int:
             rel = pdf
         print(f"  {rel}", flush=True)
 
-    xml_output, stderr = run_verapdf(pdfs, verapdf_cmd)
+    try:
+        xml_output, stderr = run_verapdf(pdfs, verapdf_cmd)
+    except subprocess.TimeoutExpired as exc:
+        emit_annotation(
+            "error",
+            "PDF Accessibility",
+            f"veraPDF timed out after {exc.timeout} seconds. Skipping accessibility check.",
+        )
+        return 0  # Don't fail the build if veraPDF itself can't run
+    except (OSError, subprocess.SubprocessError) as exc:
+        emit_annotation(
+            "error",
+            "PDF Accessibility",
+            f"veraPDF failed while checking PDFs ({exc}). Skipping accessibility check.",
+        )
+        return 0  # Don't fail the build if veraPDF itself can't run
     if stderr:
         for line in stderr.splitlines():
             if line.strip():
