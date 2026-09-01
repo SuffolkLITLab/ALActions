@@ -22,6 +22,21 @@ inputs:
       'error' fails the build when a template has accessibility errors.
       'off' skips the check entirely.
     default: "warning"
+  pdf-validation-mode:
+    description: >-
+      How to report PDF/UA-1 accessibility failures, found by veraPDF, in PDF
+      templates under docassemble/*/data/templates.
+      'warning' annotates the job without failing it (default).
+      'error' fails the build when a template has accessibility failures.
+      'off' skips the check and the veraPDF install entirely.
+    default: "warning"
+  pdf-strict:
+    description: >-
+      Enable strict PDF/UA-1 checking.
+      When 'false' (default), tab-order and annotation structure rules for form
+      fields are suppressed because forms are often flattened before users see
+      them. Set to 'true' to treat those rules as failures.
+    default: "false"
 
 runs:
   using: composite
@@ -153,4 +168,127 @@ runs:
           escaped="${escaped//$'\n'/'%0A'}"
           echo "::warning title=URL checker::$escaped"
         fi
+      shell: bash
+
+    - name: Install veraPDF
+      continue-on-error: true
+      env:
+        PDF_VALIDATION_MODE: ${{ inputs.pdf-validation-mode }}
+      run: |
+        if [ "$PDF_VALIDATION_MODE" = "off" ]; then
+          echo "PDF accessibility checking is off; skipping veraPDF installation"
+          exit 0
+        fi
+
+        # veraPDF 1.28+ is required for compatibility with Java 21 (GitHub Actions default).
+        VERAPDF_VERSION="1.28.1"
+        VERAPDF_MINOR="1.28"
+        INSTALL_DIR="${RUNNER_TEMP}/verapdf"
+        INSTALLER_SRC="$(mktemp -d "${RUNNER_TEMP}/verapdf-installer-src.XXXXXX")"
+        VERAPDF_KEY_URL="https://software.verapdf.org/keys/KEY"
+        VERAPDF_KEY_FINGERPRINT="13DD102B4DD69354D12DE5A83184863278B17FE7"
+
+        if command -v verapdf &>/dev/null; then
+          existing_version="$(
+            verapdf --version 2>&1 |
+              grep -Eo '[0-9]+(\.[0-9]+)+' |
+              head -1 || true
+          )"
+          if [ -n "$existing_version" ] && \
+            [ "$(printf '%s\n' "$VERAPDF_VERSION" "$existing_version" | sort -V | head -1)" = "$VERAPDF_VERSION" ]; then
+            echo "veraPDF already available: $(verapdf --version 2>&1 | head -1)"
+            exit 0
+          fi
+          echo "Existing veraPDF (${existing_version:-unknown}) is older than required (${VERAPDF_VERSION}); installing ${VERAPDF_VERSION}..."
+        fi
+
+        echo "Downloading veraPDF ${VERAPDF_VERSION}..."
+        INSTALLER_ZIP="${RUNNER_TEMP}/verapdf-installer.zip"
+        INSTALLER_SIGNATURE="${INSTALLER_ZIP}.asc"
+        VERAPDF_KEY="${RUNNER_TEMP}/verapdf-key.asc"
+        wget -q --https-only \
+          "https://software.verapdf.org/releases/${VERAPDF_MINOR}/verapdf-greenfield-${VERAPDF_VERSION}-installer.zip" \
+          -O "${INSTALLER_ZIP}"
+        wget -q --https-only \
+          "https://software.verapdf.org/releases/${VERAPDF_MINOR}/verapdf-greenfield-${VERAPDF_VERSION}-installer.zip.asc" \
+          -O "${INSTALLER_SIGNATURE}"
+        wget -q --https-only "${VERAPDF_KEY_URL}" -O "${VERAPDF_KEY}"
+
+        # Verify the publisher key before using it to verify the installer.
+        export GNUPGHOME="$(mktemp -d "${RUNNER_TEMP}/verapdf-gnupg.XXXXXX")"
+        if ! gpg --batch --quiet --with-colons --show-keys "${VERAPDF_KEY}" |
+          awk -F: -v expected="${VERAPDF_KEY_FINGERPRINT}" \
+            '$1 == "fpr" && toupper($10) == expected { found = 1 } END { exit found ? 0 : 1 }'; then
+          echo "Downloaded veraPDF signing key has an unexpected fingerprint" >&2
+          exit 1
+        fi
+        gpg --batch --quiet --import "${VERAPDF_KEY}"
+
+        GPG_STATUS="${RUNNER_TEMP}/verapdf-gpg-status.txt"
+        GPG_ERROR="${RUNNER_TEMP}/verapdf-gpg-error.txt"
+        if ! gpg --batch --status-fd=1 --verify "${INSTALLER_SIGNATURE}" "${INSTALLER_ZIP}" \
+          >"${GPG_STATUS}" 2>"${GPG_ERROR}"; then
+          cat "${GPG_ERROR}" >&2
+          echo "veraPDF installer signature verification failed" >&2
+          exit 1
+        fi
+        if ! awk -v expected="${VERAPDF_KEY_FINGERPRINT}" \
+          '$1 == "[GNUPG:]" && $2 == "VALIDSIG" && (toupper($3) == expected || toupper($NF) == expected) { found = 1 } END { exit found ? 0 : 1 }' \
+          "${GPG_STATUS}"; then
+          echo "veraPDF installer was not signed by the pinned publisher key" >&2
+          exit 1
+        fi
+
+        unzip -q "${INSTALLER_ZIP}" -d "${INSTALLER_SRC}"
+
+        cat > "${RUNNER_TEMP}/verapdf-autoinstall.xml" << EOF
+        <AutomatedInstallation langpack="eng">
+          <com.izforge.izpack.panels.htmlhello.HTMLHelloPanel id="welcome"/>
+          <com.izforge.izpack.panels.target.TargetPanel id="install_dir">
+            <installpath>${INSTALL_DIR}</installpath>
+          </com.izforge.izpack.panels.target.TargetPanel>
+          <com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select">
+            <pack name="veraPDF GUI" selected="true"/>
+            <pack name="veraPDF Mac and *nix Scripts" selected="true"/>
+            <pack name="veraPDF Batch files" selected="false"/>
+            <pack name="veraPDF Validation model" selected="true"/>
+            <pack name="veraPDF Documentation" selected="false"/>
+            <pack name="veraPDF Sample Plugins" selected="false"/>
+          </com.izforge.izpack.panels.packs.PacksPanel>
+          <com.izforge.izpack.panels.install.InstallPanel id="install"/>
+          <com.izforge.izpack.panels.finish.FinishPanel id="finish"/>
+        </AutomatedInstallation>
+        EOF
+
+        INSTALLER_JAR=$(find "${INSTALLER_SRC}" -name "verapdf-izpack-installer-${VERAPDF_VERSION}.jar" -print -quit)
+        if [ -z "${INSTALLER_JAR}" ]; then
+          echo "Could not find the expected veraPDF ${VERAPDF_VERSION} installer JAR" >&2
+          exit 1
+        fi
+        java -jar "${INSTALLER_JAR}" "${RUNNER_TEMP}/verapdf-autoinstall.xml"
+        installed_version="$(
+          "${INSTALL_DIR}/verapdf" --version 2>&1 |
+            grep -Eo '[0-9]+(\.[0-9]+)+' |
+            head -1 || true
+        )"
+        if [ -z "${installed_version}" ] || \
+          [ "$(printf '%s\n' "$VERAPDF_VERSION" "$installed_version" | sort -V | head -1)" != "$VERAPDF_VERSION" ]; then
+          echo "Installed veraPDF version (${installed_version:-unknown}) is older than required (${VERAPDF_VERSION})" >&2
+          exit 1
+        fi
+        echo "${INSTALL_DIR}" >> "${GITHUB_PATH}"
+        echo "Installed veraPDF: $("${INSTALL_DIR}/verapdf" --version 2>&1 | head -1)"
+      shell: bash
+
+    - name: Check PDF accessibility with veraPDF
+      env:
+        PDF_VALIDATION_MODE: ${{ inputs.pdf-validation-mode }}
+        PDF_ACCESSIBILITY_MODE: ${{ inputs.pdf-validation-mode }}
+        PDF_ACCESSIBILITY_STRICT: ${{ inputs.pdf-strict }}
+      run: |
+        if [ "$PDF_VALIDATION_MODE" = "off" ]; then
+          echo "PDF accessibility checking is off"
+          exit 0
+        fi
+        python "${{ github.action_path }}/check_pdf_accessibility.py"
       shell: bash
