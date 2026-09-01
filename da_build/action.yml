@@ -53,7 +53,7 @@ runs:
       shell: bash
 
     - name: Run YAML Checker
-      run: find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker
+      run: find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 -r python -m dayamlchecker
       shell: bash
 
     - name: Check URLs in question/template files
@@ -111,6 +111,7 @@ runs:
       shell: bash
 
     - name: Install veraPDF
+      continue-on-error: true
       env:
         PDF_VALIDATION_MODE: ${{ inputs.pdf-validation-mode }}
       run: |
