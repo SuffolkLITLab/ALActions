@@ -14,6 +14,14 @@ inputs:
   ignore-urls:
     description: Comma/newline-separated absolute URLs to ignore in URL checks
     default: ""
+  docx-validation-mode:
+    description: >-
+      How to report accessibility problems in DOCX templates under
+      docassemble/*/data/templates.
+      'warning' annotates the job without failing it (default).
+      'error' fails the build when a template has accessibility errors.
+      'off' skips the check entirely.
+    default: "warning"
   pdf-validation-mode:
     description: >-
       How to report PDF/UA-1 accessibility failures, found by veraPDF, in PDF
@@ -45,7 +53,7 @@ runs:
       shell: bash
 
     - name: Install dependencies
-      run: uv tool install "dayamlchecker>=1.4.0" --exclude-newer-package "dayamlchecker=0 days"
+      run: uv tool install "dayamlchecker>=1.5.0" --exclude-newer-package "dayamlchecker=0 days"
       shell: bash
 
     - name: Check syntax for all files
@@ -56,11 +64,12 @@ runs:
       run: uv build --sdist --wheel --out-dir dist/
       shell: bash
 
-    - name: Run YAML Checker
+    - name: Run YAML and template document checker
       env:
         SKIP_URL_CHECK: ${{ inputs.skip-url-check }}
         SKIP_TEMPLATES: ${{ inputs.skip-templates }}
         IGNORE_URLS: ${{ inputs.ignore-urls }}
+        DOCX_VALIDATION_MODE: ${{ inputs.docx-validation-mode }}
       run: |
         # necessary because dayamlchecker.check_questions_urls isn't a binary.
         source $(uv tool dir)/dayamlchecker/bin/activate
@@ -78,7 +87,27 @@ runs:
           args+=(--url-check-ignore-urls "$IGNORE_URLS")
         fi
 
-        find . -name "*.yml" -path "*/questions/*" -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
+        if [ "$DOCX_VALIDATION_MODE" = "off" ]; then
+          args+=(--no-docx-accessibility)
+        else
+          # Default is "warning", which reports every finding without failing
+          # the build so authors can work through them over time.
+          args+=(--docx-accessibility-severity "$DOCX_VALIDATION_MODE")
+        fi
+
+        # Annotate the PR rather than only writing to the log.
+        args+=(--format github)
+
+        # Match specific files rather than whole directories: not every YAML
+        # file is a docassemble interview (workflows, ALKiln fixtures), and
+        # only documents under the package's own data/templates are the ones
+        # users receive. Both patterns are anchored at the repo root, so
+        # generated copies outside docassemble/ cannot match either pattern.
+        find . \
+          \( \
+            \( -name "*.yml" -path "./docassemble/*/questions/*" \) -o \
+            \( -name "*.docx" -path "./docassemble/*/data/templates/*" \) \
+          \) -print0 | xargs -0 -r python -m dayamlchecker "${args[@]}"
       shell: bash
 
     - name: Check URLs in question/template files
