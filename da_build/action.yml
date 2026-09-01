@@ -97,7 +97,7 @@ runs:
             \( -name "*.yml" -path "./docassemble/*/questions/*" \) -o \
             \( -name "*.docx" -path "./docassemble/*/data/templates/*" \
                -not -name '~$*' \) \
-          \) -print0 | xargs -0 python -m dayamlchecker "${args[@]}"
+          \) -print0 | xargs -0 -r python -m dayamlchecker "${args[@]}"
       shell: bash
 
     - name: Check URLs in question/template files
