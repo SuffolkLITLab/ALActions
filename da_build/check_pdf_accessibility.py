@@ -158,6 +158,33 @@ def classify_rule(clause: str, test_number: str, strict: bool) -> str:
     return base
 
 
+def effective_status(result: dict, strict: bool) -> str:
+    """Return the effective pass, warning, or failure status for a PDF.
+
+    veraPDF's document-level ``isCompliant`` flag does not account for this
+    checker's severity classification. A document with only informational or
+    suppressed findings therefore passes the effective check, even when
+    veraPDF reports it as non-compliant.
+    """
+    if result.get("exception") or result.get("parse_error"):
+        return "fail"
+
+    severities = [
+        classify_rule(rule["clause"], rule["test_number"], strict)
+        for rule in result.get("failed_rules", [])
+    ]
+    if "fail" in severities:
+        return "fail"
+    if "warning" in severities:
+        return "warning"
+    if severities or result.get("compliant"):
+        return "pass"
+
+    # A non-compliant result with no classified failed rules is unexpected;
+    # keep it visible as a failure instead of silently treating it as passed.
+    return "fail"
+
+
 def find_pdfs(root_dir: Path) -> list[Path]:
     """Find the PDF templates users actually receive.
 
@@ -279,32 +306,12 @@ def write_summary(results: list[dict], strict: bool) -> None:
             buckets[sev].append(rule)
         return buckets
 
-    # Count PDFs with at least one fail-level issue
-    fail_count = sum(
-        1 for r in results
-        if not r.get("compliant") and (
-            r.get("exception") or r.get("parse_error")
-            or any(
-                classify_rule(rule["clause"], rule["test_number"], strict) == "fail"
-                for rule in r.get("failed_rules", [])
-            )
-        )
-    )
-    warn_only_count = sum(
-        1 for r in results
-        if not r.get("compliant") and not r.get("exception") and not r.get("parse_error")
-        and not any(
-            classify_rule(rule["clause"], rule["test_number"], strict) == "fail"
-            for rule in r.get("failed_rules", [])
-        )
-        and any(
-            classify_rule(rule["clause"], rule["test_number"], strict) == "warning"
-            for rule in r.get("failed_rules", [])
-        )
-    )
+    statuses = [effective_status(result, strict) for result in results]
+    fail_count = statuses.count("fail")
+    warn_only_count = statuses.count("warning")
 
     if fail_count == 0 and warn_only_count == 0:
-        lines.append(f"✅ All {total} PDF(s) passed PDF/UA-1 accessibility checks.")
+        lines.append(f"✅ All {total} PDF(s) passed effective PDF/UA-1 accessibility checks.")
     elif fail_count > 0:
         lines.append(
             f"❌ **{fail_count} of {total} PDF(s) have accessibility failures** "
@@ -387,16 +394,7 @@ def write_summary(results: list[dict], strict: bool) -> None:
         return out
 
     # Failing PDFs first
-    failing_pdfs = [
-        r for r in results
-        if not r.get("compliant") and (
-            r.get("exception") or r.get("parse_error")
-            or any(
-                classify_rule(rule["clause"], rule["test_number"], strict) == "fail"
-                for rule in r.get("failed_rules", [])
-            )
-        )
-    ]
+    failing_pdfs = [r for r in results if effective_status(r, strict) == "fail"]
     if failing_pdfs:
         lines.append("### ❌ Accessibility Failures")
         lines.append("")
@@ -405,18 +403,7 @@ def write_summary(results: list[dict], strict: bool) -> None:
             lines.extend(_render_pdf_section(result, buckets))
 
     # Advisory-only PDFs
-    warn_only_pdfs = [
-        r for r in results
-        if not r.get("compliant") and not r.get("exception") and not r.get("parse_error")
-        and not any(
-            classify_rule(rule["clause"], rule["test_number"], strict) == "fail"
-            for rule in r.get("failed_rules", [])
-        )
-        and any(
-            classify_rule(rule["clause"], rule["test_number"], strict) in ("warning", "suppressed")
-            for rule in r.get("failed_rules", [])
-        )
-    ]
+    warn_only_pdfs = [r for r in results if effective_status(r, strict) == "warning"]
     if warn_only_pdfs:
         lines.append("### ⚠️ Advisory Warnings Only")
         lines.append("")
@@ -425,12 +412,16 @@ def write_summary(results: list[dict], strict: bool) -> None:
             lines.extend(_render_pdf_section(result, buckets))
 
     # Passing PDFs
-    passing = [r for r in results if r.get("compliant")]
+    passing = [r for r in results if effective_status(r, strict) == "pass"]
     if passing:
         lines.append("### ✅ Passing PDFs")
         lines.append("")
         for r in passing:
-            lines.append(f"- ✅ `{Path(r['pdf']).name}`")
+            buckets = effective_rules(r)
+            if any(buckets.values()):
+                lines.extend(_render_pdf_section(r, buckets))
+            else:
+                lines.append(f"- ✅ `{Path(r['pdf']).name}`")
         lines.append("")
 
     with open(summary_path, "a", encoding="utf-8") as f:
@@ -506,9 +497,10 @@ def main() -> int:
     print("", flush=True)
     for result in results:
         name = Path(result["pdf"]).name
-        if result.get("compliant"):
+        status = effective_status(result, strict)
+        if status == "pass" and result.get("compliant"):
             print(f"  ✓ {name}: compliant", flush=True)
-        elif result.get("exception") or result.get("parse_error"):
+        elif status == "fail" and (result.get("exception") or result.get("parse_error")):
             msg = result.get("exception") or result.get("parse_error")
             print(f"  ✗ {name}: error — {msg}", flush=True)
         else:
@@ -525,34 +517,16 @@ def main() -> int:
                 parts.append(f"{buckets['suppressed']} suppressed")
             if buckets["info"]:
                 parts.append(f"{buckets['info']} info")
-            print(f"  ✗ {name}: {', '.join(parts) if parts else 'non-compliant'}", flush=True)
+            marker = "✓" if status == "pass" else "✗"
+            detail = ", ".join(parts) if parts else "no actionable findings"
+            print(f"  {marker} {name}: {detail}", flush=True)
 
     write_summary(results, strict)
 
     # Collect PDFs with real failures (fail-severity violations)
-    failing = [
-        r for r in results
-        if not r.get("compliant") and (
-            r.get("exception") or r.get("parse_error")
-            or any(
-                classify_rule(rule["clause"], rule["test_number"], strict) == "fail"
-                for rule in r.get("failed_rules", [])
-            )
-        )
-    ]
+    failing = [r for r in results if effective_status(r, strict) == "fail"]
     # Collect PDFs with advisory warnings only
-    warn_only = [
-        r for r in results
-        if not r.get("compliant") and not r.get("exception") and not r.get("parse_error")
-        and not any(
-            classify_rule(rule["clause"], rule["test_number"], strict) == "fail"
-            for rule in r.get("failed_rules", [])
-        )
-        and any(
-            classify_rule(rule["clause"], rule["test_number"], strict) == "warning"
-            for rule in r.get("failed_rules", [])
-        )
-    ]
+    warn_only = [r for r in results if effective_status(r, strict) == "warning"]
 
     if failing:
         failing_names = ", ".join(Path(r["pdf"]).name for r in failing)
