@@ -210,6 +210,16 @@ def run_verapdf(pdfs: list[Path], verapdf_cmd: str = "verapdf") -> tuple[str, st
     """Run veraPDF on a list of PDFs; return (stdout_xml, stderr)."""
     cmd = [verapdf_cmd, "--flavour", "ua1", "--format", "xml"] + [str(p) for p in pdfs]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    # veraPDF uses exit code 1 for validation failures, which still produce a
+    # useful XML report. Other non-zero statuses indicate an operational error
+    # and must not be parsed as if they were a complete validation result.
+    if result.returncode not in (0, 1):
+        raise subprocess.CalledProcessError(
+            result.returncode,
+            cmd,
+            output=result.stdout,
+            stderr=result.stderr,
+        )
     return result.stdout, result.stderr
 
 
