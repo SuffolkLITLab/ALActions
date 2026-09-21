@@ -287,6 +287,7 @@ jobs:
 - Python all compiles
 - The interview file is minimally correct (python code blocks compile, mako statements compile, we are using known Docassemble keys in the YAML)
 - Absolute URLs in `docassemble/*/data/questions` do not return HTTP 404 (excluding `example.com` links)
+- PDF templates under `docassemble/*/data/templates` are checked for PDF/UA-1 accessibility using [veraPDF](https://verapdf.org/)
 
 #### Usage
 
@@ -308,7 +309,15 @@ jobs:
           ignore-urls: |
             https://example.com/known-flaky-endpoint
             https://another.example.org/blocked-from-ci
+          # Optional: warning (default), error, or off to skip PDF checking
+          pdf-validation-mode: "warning"
+          # Optional: enforce form-field annotation structure rules
+          pdf-strict: "false"
 ```
+
+#### PDF Accessibility Checking
+
+PDF templates under `docassemble/*/data/templates` are checked against the PDF/UA-1 accessibility standard. Results are written to the job summary and emitted as annotations. Set `pdf-validation-mode` to `error` to fail on accessibility failures, or `off` to skip the check and veraPDF installation. Set `pdf-strict` to `true` to enforce form-annotation and tab-order rules that are suppressed by default because many tools flatten forms before users see them.
 
 ## Development Details
 
