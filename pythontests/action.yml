@@ -48,14 +48,21 @@ runs:
         fi
       shell: bash
 
-    - run: uv run mypy . --exclude '^build/' --explicit-package-bases
+    - name: Type check with mypy
+      run: |
+        echo "::add-matcher::$GITHUB_ACTION_PATH/mypy-matcher.json"
+        uv run mypy . --exclude '^build/' --explicit-package-bases
+        echo "::remove-matcher owner=mypy::"
       shell: bash
 
     - name: Run Bandit security scan
       run: uv tool run bandit -r . --exclude './scripts,./venv,./.venv,./build' --severity-level=high
       shell: bash
 
-    - run: uv run pytest
+    - name: Run tests with pytest
+      run: |
+        echo "::add-matcher::$GITHUB_ACTION_PATH/pytest-matcher.json"
+        uv run pytest
       shell: bash
 
     - id: output-step
