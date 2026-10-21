@@ -24,7 +24,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Check files using the black formatter
       uses: psf/black@35ea67920b7f6ac8e09be1c47278752b1e827f76
       id: action_black
