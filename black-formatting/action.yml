@@ -29,11 +29,5 @@ runs:
       uses: psf/black@35ea67920b7f6ac8e09be1c47278752b1e827f76
       id: action_black
       with:
-        options: "--extend-exclude (__init__.py|setup.py)"
+        options: "--check --diff --extend-exclude (__init__.py|setup.py)"
         src: "."
-    - run: echo "formatted_files=$(git diff --name-only)" >> $GITHUB_OUTPUT
-      id: formatted
-      shell: bash
-    - if: steps.formatted.outputs.formatted_files != ''
-      run: exit 1
-      shell: bash
