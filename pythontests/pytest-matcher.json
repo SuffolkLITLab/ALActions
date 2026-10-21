@@ -1,0 +1,15 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "pytest",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^(?:FAILED|ERROR) (([^\\s:]+).*)$",
+          "message": 1,
+          "file": 2
+        }
+      ]
+    }
+  ]
+}
