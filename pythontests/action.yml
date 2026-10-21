@@ -15,7 +15,7 @@ runs:
     - run: echo "ISUNITTEST=true" >> $GITHUB_ENV
       shell: bash
 
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
 
     - name: Install uv
       # unreleased, 10.3.X, but includes uv 0.13.4

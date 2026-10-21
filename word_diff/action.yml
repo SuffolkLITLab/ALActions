@@ -36,11 +36,11 @@ runs:
   steps:
     - name: Checkout repository
       if: ${{ inputs.skip_checkout != 'true' }}
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@v7
       with:
         python-version: "3.11"
 
@@ -74,7 +74,7 @@ runs:
 
     - name: Upload diff artifacts
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ inputs.artifact_name }}
         path: ${{ inputs.working_directory }}/${{ inputs.output_dir }}
