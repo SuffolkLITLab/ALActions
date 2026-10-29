@@ -21,7 +21,7 @@ runs:
       # unreleased, 10.3.X, but includes uv 0.13.4
       uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa
       with:
-        python-version: ${{ inputs.python-version }}
+        python-version: '3.14'
         version: "latest-known"
 
     - name: Set uv exclude-newer config
