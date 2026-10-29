@@ -302,7 +302,7 @@ jobs:
     steps:
       - uses: SuffolkLITLab/ALActions/da_build@main
         with:
-          python-version: "3.12"
+          python-version: "3.14"
           # Optional: disable URL checks for environments without network access
           skip-url-check: "true"
           # Optional: comma/newline-separated URLs to skip in url_check
